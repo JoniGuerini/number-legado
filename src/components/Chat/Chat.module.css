@@ -1,0 +1,872 @@
+/* Grid: cabeçalho e composer ocupam só a coluna central; assim os cards
+   laterais (sidebar e online) têm exatamente a mesma altura do card de
+   mensagens, sem esticar até a linha do cabeçalho/input. */
+.chat {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr) 190px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    '.       header    .'
+    'sidebar list      members'
+    'sidebar composer  members';
+  gap: 10px 12px;
+}
+.sidebar {
+  grid-area: sidebar;
+}
+.header {
+  grid-area: header;
+}
+.list {
+  grid-area: list;
+}
+.composer {
+  grid-area: composer;
+}
+.members {
+  grid-area: members;
+}
+
+/* ===== Cores de rank (independentes do tema — são "insígnias" do jogo) ===== */
+.chat [data-rank='bronze'] {
+  --rank: #c08457;
+}
+.chat [data-rank='prata'] {
+  --rank: #b9c2cc;
+}
+.chat [data-rank='ouro'] {
+  --rank: #e2b23c;
+}
+.chat [data-rank='platina'] {
+  --rank: #57c9b8;
+}
+.chat [data-rank='diamante'] {
+  --rank: #6cb6ff;
+}
+.chat [data-rank='mestre'] {
+  --rank: #e0669a;
+}
+
+/* ===== Sidebar de conversas ===== */
+.sidebar {
+  width: 176px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--card-edge);
+  padding: 14px 12px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navLabel {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 6px 4px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 8px;
+  font: 500 13px var(--mono);
+  color: var(--ink-muted);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.navItem:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.navActive,
+.navActive:hover {
+  background: var(--surface-deep);
+  color: var(--brass-deep);
+}
+.hash {
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.navName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--rank, inherit);
+}
+
+/* Contador de mensagens diretas não lidas — só o número (sem card) */
+.unread {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--brass-deep);
+  font: 600 12px var(--mono);
+}
+
+/* Menções a você num canal — só o número, em cor de acento pra diferenciar
+   do contador de DMs e sinalizar que foi marcação direta. */
+.mentionCount {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--accent);
+  font: 600 12px var(--mono);
+}
+
+.preview {
+  margin-top: auto;
+  align-self: flex-start;
+  font: 600 9.5px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-bright);
+  border: 1px solid color-mix(in srgb, var(--brass-bright) 45%, transparent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  cursor: default;
+}
+
+/* ===== Cabeçalho da conversa ===== */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 4px;
+}
+.headerName {
+  font: 600 15px var(--serif);
+  font-variation-settings: 'opsz' 30;
+  color: var(--rank, var(--ink));
+}
+.headerRank {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.online {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 400 12px var(--mono);
+  color: var(--ink-muted);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tier-startup);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tier-startup) 70%, transparent);
+}
+
+/* ===== Lista de mensagens ===== */
+.list {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--card-edge);
+  padding: 6px 8px;
+}
+
+.fade {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 52px;
+  z-index: 2;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 18px var(--mono);
+  color: var(--ink-muted);
+  transition: color 0.15s;
+}
+.fade:hover {
+  color: var(--brass-deep);
+}
+.fadeTop {
+  top: 6px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(to bottom, var(--paper) 35%, transparent);
+}
+.fadeBottom {
+  bottom: 6px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(to top, var(--paper) 35%, transparent);
+}
+
+/* Card "ir para a menção": barra flutuante no topo da lista quando há uma
+   menção a você acima (fora da tela ao abrir o canal). */
+.jumpBar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  max-width: calc(100% - 32px);
+  border-radius: 999px;
+  box-shadow: var(--card-edge-lg);
+  overflow: hidden;
+  animation: jumpIn 0.18s ease-out;
+}
+@keyframes jumpIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+}
+.jumpCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: none;
+  cursor: pointer;
+  padding: 9px 16px;
+  background: var(--brass-deep);
+  color: var(--paper);
+  font: 600 12px var(--mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s;
+}
+.jumpCard:hover {
+  background: var(--brass-bright);
+}
+.jumpAt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.16);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.jumpArrow {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.jumpClose {
+  border: none;
+  cursor: pointer;
+  padding: 0 12px;
+  background: var(--brass-deep);
+  color: color-mix(in srgb, var(--paper) 65%, transparent);
+  font-size: 11px;
+  transition: background 0.12s, color 0.12s;
+}
+.jumpClose:hover {
+  background: var(--brass-bright);
+  color: var(--paper);
+}
+
+/* Destaque momentâneo da mensagem alcançada pelo "ir para a menção". */
+.msgHighlight {
+  border-radius: 6px;
+  animation: mentionFlash 1.8s ease-out;
+}
+@keyframes mentionFlash {
+  0%,
+  55% {
+    background: color-mix(in srgb, var(--brass-deep) 20%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--brass-deep) 20%, transparent);
+  }
+  100% {
+    background: transparent;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-deep) transparent;
+}
+.scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--surface-deep);
+  border-radius: 999px;
+}
+.scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--brass);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 10px 14px 12px;
+}
+
+.empty {
+  font: 400 13px var(--mono);
+  color: var(--ink-faint);
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ===== Mensagem ===== */
+.msg {
+  display: flex;
+}
+.body {
+  min-width: 0;
+  max-width: 82%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Minhas mensagens vão para a direita, com balão sutil (estilo WhatsApp). */
+.msgSelf {
+  justify-content: flex-end;
+}
+.msgSelf .body {
+  align-items: flex-end;
+}
+.msgSelf .meta {
+  flex-direction: row-reverse;
+}
+.msgSelf .text {
+  text-align: right;
+}
+.author {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 13px var(--mono);
+  color: var(--rank, var(--ink));
+}
+.badge {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.time {
+  font: 400 11px var(--mono);
+  color: var(--ink-faint);
+}
+.text {
+  font: 400 14px/1.5 var(--mono);
+  color: var(--ink-soft);
+  word-break: break-word;
+}
+/* Primeira letra da mensagem sempre maiúscula (sem mexer no dado). */
+.text::first-letter {
+  text-transform: uppercase;
+}
+.msgSelf .text {
+  color: var(--ink);
+}
+
+/* Menção dentro do texto */
+.mention {
+  color: var(--rank, var(--brass-deep));
+  background: color-mix(in srgb, var(--rank, var(--brass-deep)) 14%, transparent);
+  border-radius: 3px;
+  padding: 0 3px;
+  font-weight: 600;
+}
+[role='button'].mention {
+  cursor: pointer;
+}
+.mentionSelf {
+  color: var(--brass-bright);
+  background: color-mix(in srgb, var(--brass-bright) 22%, transparent);
+}
+
+/* ===== Mensagem de sistema ===== */
+.system {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px;
+}
+.system::before,
+.system::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+.systemText {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+/* ===== Campo de envio + autocomplete de menção ===== */
+.composer {
+  position: relative;
+  display: flex;
+  gap: 8px;
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--card-edge);
+  border-radius: 4px;
+  padding: 12px 16px;
+  font: 400 14px var(--mono);
+  color: var(--ink);
+  transition: box-shadow 0.15s;
+}
+.input::placeholder {
+  color: var(--ink-faint);
+}
+.input:focus {
+  outline: none;
+  box-shadow: var(--card-edge-lg),
+    inset 0 0 0 1px color-mix(in srgb, var(--brass-deep) 55%, transparent);
+}
+.send {
+  flex-shrink: 0;
+}
+
+.mentionPop {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-width: 320px;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--card-edge-lg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 5;
+}
+.mentionOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.mentionOption:hover {
+  background: var(--surface);
+}
+.mentionName {
+  font: 600 13px var(--mono);
+  color: var(--rank, var(--ink));
+}
+.mentionRank {
+  margin-left: auto;
+  font: 500 10px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ===== Cards laterais: Online + Amigos (duas metades do mesmo card) ===== */
+.members {
+  width: 190px;
+  flex-shrink: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--card-edge);
+  padding: 14px 10px;
+  overflow: hidden;
+}
+.membersHalf {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.membersDivider {
+  flex-shrink: 0;
+  height: 1px;
+  background: var(--border-soft);
+  margin: 10px 2px;
+}
+.memberScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.memberScroll::-webkit-scrollbar {
+  display: none;
+}
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.member {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  padding-right: 4px;
+  transition: background 0.12s;
+}
+.member:hover {
+  background: var(--surface);
+}
+.memberActive,
+.memberActive:hover {
+  background: var(--surface-deep);
+}
+.memberOpen {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.memberName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 13px var(--mono);
+  color: var(--rank, var(--ink));
+}
+.memberRank {
+  flex-shrink: 0;
+  font: 500 9.5px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Indicador de online/offline na lista de amigos */
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--ink-faint);
+  opacity: 0.4;
+}
+.statusOn {
+  opacity: 1;
+  background: var(--tier-startup);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--tier-startup) 65%, transparent);
+}
+
+.friendsEmpty {
+  font: 400 12px var(--mono);
+  color: var(--ink-faint);
+  padding: 10px 8px;
+}
+
+/* ===== Menu de contexto (clique direito no jogador) ===== */
+.ctxMenu {
+  position: fixed;
+  z-index: 50;
+  min-width: 176px;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--card-edge-lg);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transform-origin: top left;
+  animation: ctxIn 0.12s ease-out;
+}
+@keyframes ctxIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+}
+.ctxName {
+  font: 600 12px var(--mono);
+  color: var(--rank, var(--ink));
+  padding: 6px 10px 8px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--border-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ctxItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font: 500 12.5px var(--mono);
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.ctxItem:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.ctxDanger:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+/* ===== Modal de perfil do jogador ===== */
+.profileBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  animation: profileFade 0.15s ease-out;
+}
+@keyframes profileFade {
+  from {
+    opacity: 0;
+  }
+}
+.profileModal {
+  position: relative;
+  width: min(92vw, 380px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow: var(--card-edge-lg);
+  padding: 22px;
+  animation: profilePop 0.16s ease-out;
+}
+@keyframes profilePop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+}
+.profileClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.12s, color 0.12s;
+}
+.profileClose:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.profileHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.profileId {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.profileName {
+  font: 600 19px var(--serif);
+  font-variation-settings: 'opsz' 34;
+  color: var(--rank, var(--ink));
+}
+.profileRank {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.profileStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 12px var(--mono);
+  color: var(--ink-muted);
+}
+
+.profileStats {
+  display: flex;
+  flex-direction: column;
+}
+.statRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.statRow:last-child {
+  border-bottom: none;
+}
+.statLabel {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.statValue {
+  font: 600 14px var(--mono);
+  color: var(--ink);
+  text-align: right;
+}
+
+.profileActions {
+  display: flex;
+  gap: 8px;
+}
+.profileBtn {
+  flex: 1;
+}
+.profileBtnGhost {
+  flex: 1;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 14px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: 500 13px var(--mono);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.profileBtnGhost:hover {
+  background: var(--surface-deep);
+  color: var(--ink);
+}
+
+/* ===== Responsivo ===== */
+/* Tablet: esconde a lista de online e vira grid de 2 colunas */
+@media (max-width: 860px) {
+  .chat {
+    grid-template-columns: 150px minmax(0, 1fr);
+    grid-template-areas:
+      '.       header'
+      'sidebar list'
+      'sidebar composer';
+  }
+  .members {
+    display: none;
+  }
+  .sidebar {
+    width: 150px;
+    padding: 12px 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .chat {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  /* Sidebar vira faixa horizontal rolável no topo */
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .navGroup {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+  .navLabel {
+    padding: 0 4px 0 0;
+    white-space: nowrap;
+  }
+  .navItem {
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+  .preview {
+    margin-top: 0;
+    white-space: nowrap;
+  }
+  .inner {
+    padding: 10px 6px 12px 8px;
+  }
+}

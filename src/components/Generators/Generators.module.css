@@ -1,0 +1,381 @@
+.wrap {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24px;
+}
+
+.baseBlock {
+  align-self: center;
+}
+
+/* ===== Tela de escolha de modo ===== */
+.modeScreen {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modeCard {
+  background: var(--paper);
+  border: none;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 400px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  box-shadow: var(--card-edge-lg);
+}
+
+.modeTitle {
+  font: 500 22px/1.2 var(--serif);
+  font-variation-settings: 'opsz' 36;
+  color: var(--brass-deep);
+  letter-spacing: -0.01em;
+}
+
+.modeOptions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.modeBtn {
+  flex: 1;
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--card-edge);
+  border-radius: 4px;
+  padding: 12px 0;
+  font: 500 13px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.modeBtn:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.modeActive,
+.modeActive:hover {
+  background: var(--surface-deep);
+  color: var(--brass-deep);
+}
+
+.modeHint {
+  font: 400 12px/1.5 var(--mono);
+  color: var(--ink-muted);
+  text-align: center;
+  min-height: 36px;
+}
+
+
+/* Hub de cardzinhos no canto superior esquerdo, lado a lado */
+.corner {
+  position: fixed;
+  top: 12px;
+  /* Reserva o espaço do botão de tela cheia (fixo em left:12, ~32px de largura)
+     para os cardzinhos começarem logo depois dele, sem sobreposição */
+  left: 52px;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.timePill {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  background: var(--paper);
+  border-radius: 4px;
+  box-shadow: var(--card-edge-pill);
+  padding: 6px 12px;
+}
+
+.exportBtn {
+  background: var(--paper);
+  border: none;
+  border-radius: 4px;
+  box-shadow: var(--card-edge-pill);
+  padding: 6px 12px;
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.exportBtn:hover {
+  background: var(--surface);
+  color: var(--brass-deep);
+}
+
+.toggleOn,
+.toggleOn:hover {
+  background: var(--surface-deep);
+  color: var(--brass-deep);
+}
+
+.timeValue {
+  font: 600 14px/1 var(--mono);
+  color: var(--brass-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeLabel {
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.baseBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.baseLabel {
+  font: 500 12px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.baseValue {
+  font: 600 48px/1 var(--mono);
+  color: var(--brass-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.baseRate {
+  font: 500 13px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.listWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Única área rolável do app, com a barra invisível */
+.list {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Áreas esmaecidas nas bordas: indicam mais conteúdo e levam ao topo/fim */
+.fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 56px;
+  z-index: 2;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 18px var(--mono);
+  color: var(--ink-muted);
+  transition: color 0.15s;
+}
+.fade:hover {
+  color: var(--brass-deep);
+}
+
+.fadeTop {
+  top: 0;
+  background: linear-gradient(to bottom, var(--bg) 25%, var(--bg-fade));
+}
+
+.fadeBottom {
+  bottom: 0;
+  background: linear-gradient(to top, var(--bg) 25%, var(--bg-fade));
+}
+
+.row {
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  /* Colunas de largura fixa + space-between = mesma distância entre todas
+     (o log de desbloqueios vive na aba Atividade) */
+  grid-template-columns: 60px 180px 200px 120px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: var(--paper);
+  border: none;
+  border-radius: 4px;
+  box-shadow: var(--card-edge);
+  padding: 14px 18px;
+}
+
+/* Gerador ainda bloqueado: sem card de fundo, só o botão-barra "solto" na
+   lista. Ao comprar, vira o card completo do gerador. */
+.unlockBtn {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 15px 18px;
+}
+
+/* Botão-barra de progresso: o preenchimento cresce conforme o recurso se
+   aproxima do custo (via --progress definido inline) */
+.progressBtn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Parte vazia = visual padrão de botão primário desabilitado (cinza, texto
+   escuro), mantendo a identidade dos outros botões. */
+.progressBtn:disabled {
+  opacity: 1;
+  background: var(--ink-faint);
+  color: var(--paper);
+}
+
+/* Preenchimento na largura do progresso: mesma cor cheia do botão de comprar
+   (--brass-deep, sem transparência), para dar sensação de "estrada percorrida"
+   e completude — contra a parte vazia (cinza) do botão desabilitado.
+   Elemento real (não pseudo) com width inline: repaint confiável em todos os
+   navegadores — variável CSS em pseudo-elemento não atualizava no Chromium/Win. */
+.progressFill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--brass-deep);
+}
+
+.progressLabel {
+  position: relative;
+}
+
+.genName {
+  font: 600 20px var(--serif);
+  font-variation-settings: 'opsz' 36;
+  color: var(--brass-deep);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* No desktop o wrapper é transparente: os 3 stats viram células do grid */
+.statsRow {
+  display: contents;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.statLabel {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  /* Nunca quebra linha — senão o card fica mais alto que os irmãos */
+  white-space: nowrap;
+}
+
+.statValue {
+  font: 500 14px var(--mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.row button {
+  width: 120px;
+  padding: 10px 0;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 640px) {
+  /* Hub de pills entra no fluxo da página, centralizado e com quebra */
+  .corner {
+    position: static;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .timePill,
+  .exportBtn {
+    white-space: nowrap;
+  }
+
+  .wrap {
+    gap: 14px;
+  }
+
+  .baseValue {
+    font-size: 40px;
+  }
+
+  /* Card do gerador vertical: número no topo, stats empilhados
+     (rótulo à esquerda, valor à direita) e botão de compra na base */
+  .row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .genName {
+    font-size: 18px;
+  }
+  .statsRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    text-align: right;
+  }
+  .statValue {
+    font-size: 13px;
+  }
+  .row button {
+    width: 100%;
+    padding: 12px 0;
+  }
+}

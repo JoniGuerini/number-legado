@@ -1,0 +1,83 @@
+.bar {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+/* Mobile: entra no fluxo, no topo da página */
+@media (max-width: 640px) {
+  .bar {
+    position: static;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .pill {
+    white-space: nowrap;
+  }
+}
+
+.pill {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  background: var(--paper);
+  border-radius: 4px;
+  box-shadow: var(--card-edge-pill);
+  padding: 6px 12px;
+}
+
+.value {
+  font: 600 14px/1 var(--mono);
+  color: var(--brass-deep);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.label {
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* Indicador de ambiente: vermelho = dev local, verde = produção */
+.envDev,
+.envProd {
+  font: 600 11px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.envDev {
+  color: var(--accent);
+}
+.envProd {
+  color: var(--tier-startup);
+}
+
+.batteryLow {
+  color: var(--accent);
+}
+
+/* Deploy mais novo disponível: pill vira botão de recarregar */
+.updatePill {
+  border: none;
+  cursor: pointer;
+  font: 600 11px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tier-startup);
+  transition: background 0.15s, color 0.15s;
+}
+.updatePill:hover {
+  background: var(--surface);
+}
+
+.divider {
+  width: 1px;
+  height: 12px;
+  align-self: center;
+  background: var(--border);
+  margin: 0 3px;
+}

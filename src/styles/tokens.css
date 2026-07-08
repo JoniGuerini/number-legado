@@ -1,0 +1,210 @@
+:root {
+  /* ============================================================
+     FUNDOS — base graduada do mais profundo ao mais elevado
+     (dark neutro: pretos/cinzas puros, sem o tom azulado original)
+     ============================================================ */
+  --bg: #070707;
+  --paper: #111111;
+  --surface: #1a1a1a;
+  --surface-hover: #232323;
+  --surface-deep: #2d2d2d;
+
+  /* ============================================================
+     LATÃO — UI primária, acentos, botões principais e títulos
+     ============================================================ */
+  --brass-light: #5a5040;
+  --brass: #7a7060;
+  --brass-deep: #bcb09a;
+  --brass-bright: #c2a878;
+
+  /* ============================================================
+     FOLHA — textos, do mais forte ao mais discreto (cinzas neutros)
+     ============================================================ */
+  --ink: #e0e0e0;
+  --ink-soft: #b6b6b6;
+  --ink-muted: #909090;
+  --ink-faint: #5a5a5a;
+
+  /* ============================================================
+     ACENTO — destrutivo (vermelho)
+     ============================================================ */
+  --accent: #c45a4d;
+  --accent-deep: #9a3e34;
+
+  /* ============================================================
+     VITAIS — barras de recurso/progresso
+     ============================================================ */
+  --vital-vida: #d97766;
+  --vital-mana: #5a8aa8;
+  --vital-exp: #8a6f3e;
+
+  /* ============================================================
+     TIERS DE CONTRATO — porte do cliente, do freela ao unicórnio
+     (aplicar no nome/tag do contrato, nunca em bordas)
+     ============================================================ */
+  --tier-freela: #b0b6c0;       /* Cinza-folha — trabalho pequeno, neutro */
+  --tier-startup: #57c96a;      /* Verde — crescimento, garagem */
+  --tier-corporativo: #6495ED;  /* Azul corporativo clássico */
+  --tier-enterprise: #B57EDC;   /* Roxo — contratos enterprise premium */
+  --tier-unicornio: #e0669a;    /* Rosa-magenta — o mítico unicórnio */
+
+  /* ============================================================
+     BORDAS — visíveis sobre fundo escuro
+     ============================================================ */
+  --border: #2d2d2d;
+  --border-soft: #1f1f1f;
+  --border-faint: #161616;
+
+  /* ============================================================
+     SOMBRAS — sistema layered (dark mode tuned)
+     ============================================================ */
+  --card-edge:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 0 0 0.5px rgba(0, 0, 0, 0.7);
+
+  --card-edge-lg:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 18px rgba(0, 0, 0, 0.5),
+    0 0 0 0.5px rgba(0, 0, 0, 0.7);
+
+  --card-edge-pill:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 1px 1px rgba(0, 0, 0, 0.4),
+    0 0 0 0.5px rgba(0, 0, 0, 0.7);
+
+  --card-edge-press:
+    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    0 0 0 0.5px rgba(0, 0, 0, 0.7);
+
+  --shadow-md: var(--card-edge-lg);
+  --shadow-lg: var(--card-edge-lg);
+
+  /* ============================================================
+     TIPOGRAFIA
+     ============================================================ */
+  --serif: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* Fim transparente dos gradientes de fade, casado com o --bg de cada tema
+   (transparent puro esverdeia/escurece a interpolação) */
+:root {
+  --bg-fade: rgba(7, 7, 7, 0);
+}
+
+/* Chrome/macOS em telas P3 sofre banding ao converter pretos quase-puros de
+   sRGB por tile de pintura; declarar a cor já em Display P3 elimina a
+   conversão (e o arredondamento que divergia entre tiles). */
+@supports (color: color(display-p3 0 0 0)) {
+  :root {
+    --bg: color(display-p3 0.0275 0.0275 0.0275);
+    --bg-fade: color(display-p3 0.0275 0.0275 0.0275 / 0);
+  }
+}
+
+/* ============================================================
+   TEMA: Creme terracota — claro, quente, com acento terracota
+   ============================================================ */
+:root[data-theme='creme'] {
+  color-scheme: light;
+
+  --bg: #e8dcc8;
+  --paper: #f7f0e2;
+  --surface: #efe6d2;
+  --surface-hover: #e9dec6;
+  --surface-deep: #ddcfb2;
+  --bg-fade: rgba(232, 220, 200, 0);
+
+  /* Terracota assume o papel do latão */
+  --brass-light: #d9b8a5;
+  --brass: #b56a4a;
+  --brass-deep: #a34a24;
+  --brass-bright: #c25a2e;
+
+  --ink: #3a2e24;
+  --ink-soft: #5c4c3d;
+  --ink-muted: #7d6a56;
+  --ink-faint: #a8967e;
+
+  --accent: #b04434;
+  --tier-startup: #2f7d3f;
+
+  --border: #cbb999;
+  --border-soft: #d9cab0;
+  --border-faint: #e2d6bf;
+
+  /* Sombras recalibradas para superfície clara */
+  --card-edge:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 1px 2px rgba(90, 60, 40, 0.22),
+    0 0 0 0.5px rgba(90, 60, 40, 0.14);
+
+  --card-edge-lg:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 6px 18px rgba(90, 60, 40, 0.2),
+    0 0 0 0.5px rgba(90, 60, 40, 0.14);
+
+  --card-edge-pill:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 1px rgba(90, 60, 40, 0.18),
+    0 0 0 0.5px rgba(90, 60, 40, 0.14);
+
+  --card-edge-press:
+    inset 0 2px 4px rgba(90, 60, 40, 0.28),
+    0 0 0 0.5px rgba(90, 60, 40, 0.14);
+
+  --shadow-md: var(--card-edge-lg);
+  --shadow-lg: var(--card-edge-lg);
+}
+
+/* ============================================================
+   TEMA: Verde musgo — base esverdeada escura com acento em
+   amarelo queimado (mostarda)
+   ============================================================ */
+:root[data-theme='verde'] {
+  --bg: #0a0f0a;
+  --paper: #111811;
+  --surface: #192219;
+  --surface-hover: #212d21;
+  --surface-deep: #2b392b;
+  --bg-fade: rgba(10, 15, 10, 0);
+
+  /* Amarelo queimado assume o papel do latão */
+  --brass-light: #5a5230;
+  --brass: #8a7a3a;
+  --brass-deep: #cfa63a;
+  --brass-bright: #e0b84a;
+
+  --ink: #dde3dd;
+  --ink-soft: #b2bcb2;
+  --ink-muted: #8b988b;
+  --ink-faint: #566056;
+
+  --border: #2b392b;
+  --border-soft: #1e291e;
+  --border-faint: #151d15;
+}
+
+/* ============================================================
+   TEMA: Azul meia-noite — a paleta original portada do Coders
+   (aplicado via data-theme no <html>; o padrão é o dark neutro)
+   ============================================================ */
+:root[data-theme='midnight'] {
+  --bg: #0c0e12;
+  --paper: #131620;
+  --surface: #1a1e2a;
+  --surface-hover: #232838;
+  --surface-deep: #2a3045;
+
+  --ink: #d8dce2;
+  --ink-soft: #b0b6c0;
+  --ink-muted: #8b96a3;
+  --ink-faint: #545d6e;
+
+  --border: #2a3045;
+  --border-soft: #1d2230;
+  --border-faint: #14181f;
+
+  --bg-fade: rgba(12, 14, 18, 0);
+}

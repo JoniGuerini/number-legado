@@ -1,0 +1,86 @@
+/* Modo Reino: sub-abas de linhas de produção acima do conteúdo da linha.
+   Reaproveita tokens e sombras dos outros modos. */
+
+.reino {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Sub-abas das linhas: cardzinhos lado a lado, mesma linguagem das abas de
+   navegação da Atividade/Config. */
+.lineTabs {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.lineTab {
+  flex: 1;
+  background: var(--paper);
+  border: none;
+  box-shadow: var(--card-edge);
+  border-radius: 4px;
+  padding: 11px 16px;
+  font: 500 12px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.1s, transform 0.1s;
+}
+.lineTab:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.lineTab:active {
+  box-shadow: var(--card-edge-press);
+  transform: translateY(1px);
+}
+
+.lineTabActive,
+.lineTabActive:hover {
+  background: var(--surface-deep);
+  color: var(--brass-deep);
+}
+
+/* Nome do gerador nomeado: menor e com elipse (a coluna é fixa em ~150px). */
+.genName {
+  font: 600 17px var(--serif);
+  font-variation-settings: 'opsz' 36;
+  color: var(--brass-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Aba ainda sem conteúdo ("em breve") */
+.placeholder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.placeholder span {
+  font: 500 13px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 640px) {
+  .lineTab {
+    padding: 10px 4px;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .genName {
+    font-size: 16px;
+  }
+}

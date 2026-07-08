@@ -1,0 +1,64 @@
+.btn-primary {
+  background: var(--brass-deep);
+  color: var(--paper);
+  border: none;
+  box-shadow: var(--card-edge-pill);
+  padding: 11px 26px;
+  font: 500 13px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.08s;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--brass-bright);
+  box-shadow: var(--card-edge-lg);
+}
+.btn-primary:active:not(:disabled) {
+  box-shadow: var(--card-edge-press);
+  /* Deslocamento fixo: scale em % encolhia demais os botões largos */
+  transform: translateY(1px);
+}
+.btn-primary:disabled {
+  background: var(--ink-faint);
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--card-edge-pill);
+  color: var(--ink);
+  padding: 10px 18px;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s, transform 0.08s;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--brass-deep);
+  box-shadow: var(--card-edge-lg);
+}
+.btn-secondary:active:not(:disabled) {
+  box-shadow: var(--card-edge-press);
+  transform: translateY(1px);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-secondary.danger {
+  color: var(--accent);
+}
+.btn-secondary.danger:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--paper);
+  box-shadow: var(--card-edge-lg);
+}

@@ -1,0 +1,144 @@
+.frame {
+  height: 100vh;
+  /* Mobile: 100vh ignora a barra de endereço; dvh acompanha o viewport real */
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  padding: 16px;
+  background-color: var(--bg);
+  /* Micro-ruído imperceptível (2%): impede o Chrome de desenhar o fundo como
+     bloco de cor sólida, cujo caminho de rasterização divergia do das áreas
+     pintadas e criava faixas de pretos diferentes no macOS */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* Desktop: a linha do topo é exclusiva dos cardzinhos fixos (hub e FPS);
+   o conteúdo (número base etc.) começa numa seção abaixo, sem sobreposição */
+@media (min-width: 641px) {
+  .frame {
+    padding-top: 56px;
+  }
+}
+
+/* Geradores: ocupa toda a largura do app; min-height 0 permite a lista
+   interna rolar em vez de estourar a página */
+.contentFull {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.footer {
+  position: sticky;
+  /* Sem offset extra: a distância do fundo fica igual ao padding do frame,
+     uniforme com as laterais */
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.tab {
+  flex: 1;
+  background: var(--paper);
+  border: none;
+  box-shadow: var(--card-edge);
+  border-radius: 4px;
+  padding: 12px 28px;
+  font: 500 13px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
+}
+.tab:hover {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--card-edge-lg);
+}
+.tab:active {
+  box-shadow: var(--card-edge-press);
+  transform: translateY(1px);
+}
+
+.active,
+.active:hover {
+  background: var(--surface-deep);
+  color: var(--brass-deep);
+}
+
+/* ===== Modal de configurações ===== */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  animation: modalFade 0.15s ease-out;
+}
+
+/* Quadrado (mesma altura e largura), grande o bastante para as abas caberem
+   com a fonte normal, limitado às bordas da tela */
+.modal {
+  position: relative;
+  width: min(94vmin, max(460px, 48vmin));
+  height: min(94vmin, max(460px, 48vmin));
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--card-edge-lg);
+  padding: 18px;
+  animation: modalPop 0.16s ease-out;
+}
+
+@keyframes modalFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (max-width: 640px) {
+  .frame {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  /* Mesma largura dos cards da lista */
+  .tabs {
+    width: 100%;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 2px;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+}

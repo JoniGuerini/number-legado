@@ -1,0 +1,33 @@
+---
+description: Version numbering convention (semver, WoW-style) for releases and patch notes
+alwaysApply: true
+---
+
+# Versioning Convention
+
+Versions follow `vMAJOR.MINOR.PATCH` (e.g. `v0.23.1`), WoW/Blizzard-style:
+
+- **PATCH** (third number): small releases — fixes, quality-of-life, tweaks,
+  utilities/settings, UI polish, AND **improvements/refinements to features or
+  mechanics that already exist**. Example: `v0.23.0 → v0.23.1`.
+- **MINOR** (second number): larger releases that introduce **genuinely new game
+  content or a new mechanic/mode** (something that did not exist before). Resets
+  PATCH to 0. Example: `v0.23.4 → v0.24.0`.
+- **MAJOR** (first number): massive, expansion-scale content. Resets MINOR and
+  PATCH to 0. Example: `v0.x.x → v1.0.0`.
+
+Rules:
+
+- Choose the bump by the nature of the change, not by habit — a QoL/fixes-only
+  patch is a PATCH bump, not a MINOR bump.
+- **New vs. improvement is the key test:** introducing something new (a new mode,
+  a new production line, auto-buy where there was none) is a MINOR; changing how
+  an already-existing feature behaves (revamping auto-buy, tweaking a config,
+  adding a settings toggle) is a PATCH — even if it's a "new button".
+- The game is pre-launch: stay within `0.x.x`. **`1.0.0` is the game launch and
+  is bumped ONLY when the user explicitly says so** — never bump the MAJOR on
+  your own.
+- Keep `package.json` `version` and the top entry of `src/data/changelog.ts`
+  in sync on every release.
+- Each patch note entry records the release `date` and, going forward, its
+  `time` (HH:MM). Old entries have no time and render `—`; do not backfill.

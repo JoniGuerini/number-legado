@@ -1,0 +1,39 @@
+/* Espelha a barra do FpsMeter, mas no canto superior esquerdo */
+.btn {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 26px;
+  background: var(--paper);
+  border: none;
+  border-radius: 4px;
+  box-shadow: var(--card-edge-pill);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
+}
+.btn:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.btn:active {
+  box-shadow: var(--card-edge-press);
+  transform: translateY(1px);
+}
+
+.icon {
+  display: block;
+}
+
+/* Mobile: tela cheia é pouco usada (e o iOS não suporta) — esconde para não
+   flutuar sobre o conteúdo, já que lá não há faixa reservada no topo */
+@media (max-width: 640px) {
+  .btn {
+    display: none;
+  }
+}

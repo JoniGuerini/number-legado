@@ -1,0 +1,539 @@
+/* Conteúdo do modal de Config: abas no topo (dentro do card) + corpo rolável.
+   O card em si é o próprio modal (definido em App.module.css). */
+.panel {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Abas de navegação, dentro do card */
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.tab {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--card-edge);
+  border-radius: 4px;
+  padding: 10px 8px;
+  font: 500 12px/1.25 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
+}
+.tab:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+.tab:active {
+  box-shadow: var(--card-edge-press);
+  transform: translateY(1px);
+}
+
+.tabActive,
+.tabActive:hover {
+  background: var(--surface-deep);
+  color: var(--brass-deep);
+}
+
+/* Corpo rolável do modal (sem card próprio: o modal já é o card) */
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Rodapé fixo do modal: restaurar configs ao padrão */
+.footer {
+  flex-shrink: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--surface-deep);
+  display: flex;
+  flex-direction: column;
+}
+.resetConfirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.resetWarn {
+  font: 400 12px/1.5 var(--mono);
+  color: var(--ink-muted);
+}
+.resetActions {
+  display: flex;
+  gap: 8px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font: 500 20px var(--serif);
+  font-variation-settings: 'opsz' 36;
+  letter-spacing: -0.015em;
+  color: var(--brass-deep);
+}
+
+.sectionHint {
+  font: 400 12px/1.5 var(--mono);
+  color: var(--ink-muted);
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ===== Opções (linhas clicáveis) ===== */
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--card-edge);
+  border-radius: 4px;
+  padding: 13px 16px;
+  font: 500 13px var(--mono);
+  color: var(--ink-muted);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.option:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.active,
+.active:hover {
+  background: var(--surface-deep);
+  color: var(--brass-deep);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+  white-space: nowrap;
+}
+
+/* Setinha de expandir em SVG (glifo de fonte variava entre sistemas) */
+.caret {
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.caretUp {
+  transform: rotate(180deg);
+}
+
+/* ===== Slots de save ===== */
+.slotBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slotRow {
+  display: flex;
+  gap: 8px;
+}
+.slotRow .option {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Opções do save expandido: painel afundado com botões lado a lado */
+.slotOptions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--bg);
+  box-shadow: var(--card-edge-press);
+}
+
+/* Linha de nome (renomear / criar): input afundado + botão de confirmar */
+.nameRow {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.nameInput {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: none;
+  box-shadow: var(--card-edge-press);
+  border-radius: 4px;
+  padding: 11px 14px;
+  font: 500 13px var(--mono);
+  color: var(--ink);
+  outline: none;
+  transition: box-shadow 0.15s;
+}
+/* Filete de foco por dentro: por fora ele era cortado pelo overflow do painel.
+   O filete vem ANTES na lista para ser pintado por cima da sombra interna do
+   baixo relevo — senão o topo dele escurece e parece gradiente. */
+.nameInput:focus {
+  box-shadow:
+    inset 0 0 0 1px var(--brass-deep),
+    var(--card-edge-press);
+}
+
+/* Dentro do painel expandido (fundo já escuro), o input sobe um tom */
+.slotOptions .nameInput {
+  background: var(--surface);
+}
+
+/* Carregar save e os 3 botões de zerar ocupam a largura toda da linha */
+.loadBtn {
+  width: 100%;
+}
+
+.resetRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+.resetRow .dangerBtn {
+  flex: 1 1 45%;
+  min-width: 0;
+}
+
+/* Botão compacto de ação destrutiva (zerar um modo do save) */
+.dangerBtn {
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--card-edge-pill);
+  color: var(--accent);
+  padding: 11px 18px;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
+}
+.dangerBtn:hover {
+  background: var(--accent);
+  color: var(--paper);
+  box-shadow: var(--card-edge-lg);
+}
+.dangerBtn:active {
+  box-shadow: var(--card-edge-press);
+  transform: translateY(1px);
+}
+/* Sem progresso naquele modo: nada a zerar */
+.dangerBtn:disabled {
+  opacity: 0.4;
+  color: var(--ink-faint);
+  cursor: default;
+}
+.dangerBtn:disabled:hover {
+  background: var(--surface);
+  color: var(--ink-faint);
+  box-shadow: var(--card-edge-pill);
+  transform: none;
+}
+
+.slotDate {
+  color: var(--ink-faint);
+  text-transform: none;
+}
+
+.slotDelete {
+  width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--card-edge);
+  border-radius: 4px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.slotDeleteOn {
+  color: var(--accent);
+}
+.slotDeleteOn:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* Ações destrutivas (zerar progresso) */
+.dangerOption .badge {
+  color: var(--accent);
+}
+.dangerOption:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+.dangerOption:hover .badge {
+  color: var(--paper);
+}
+
+/* ===== Cards de tema (pintados com as cores do próprio tema) ===== */
+.subLabel {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 6px;
+}
+
+/* Disponíveis lado a lado, quebrando linha conforme crescem */
+.themeGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Cards de tema ocupam a largura do modal (ativo incluso) */
+.themeCard {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border: none;
+  border-radius: 4px;
+  padding: 14px 18px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow:
+    var(--card-edge),
+    0 0 0 1px rgba(128, 128, 128, 0.25);
+  transition: box-shadow 0.15s, transform 0.08s;
+}
+.themeCard:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    var(--card-edge-lg),
+    0 0 0 1px rgba(128, 128, 128, 0.35);
+}
+.themeCard:active {
+  transform: translateY(1px);
+}
+
+/* Ativo: destacado pela posição (seção própria), sem anel nem interação */
+.themeCardActive,
+.themeCardActive:hover {
+  box-shadow: var(--card-edge);
+  transform: none;
+  cursor: default;
+}
+
+/* Mini-mockup de interface nas cores do tema */
+.themeMock {
+  flex-shrink: 0;
+  width: 128px;
+  border-radius: 4px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.themeMockTitle {
+  width: 40%;
+  height: 5px;
+  border-radius: 3px;
+}
+
+.themeMockLine {
+  width: 75%;
+  height: 4px;
+  border-radius: 3px;
+}
+
+.themeMockBar {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  margin-top: 2px;
+}
+
+.themeName {
+  flex: 1;
+  font: 500 14px var(--mono);
+}
+
+/* ===== Switch (liga/desliga) =====
+   Trilho em baixo relevo (afundado no card) e bolinha em alto relevo,
+   parecendo estar no mesmo nível da superfície externa. */
+.switch {
+  flex-shrink: 0;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: var(--card-edge-press);
+  position: relative;
+  transition: background 0.18s;
+}
+
+.switchThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink-muted);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.55);
+  transition: transform 0.18s, background 0.18s;
+}
+
+.switchOn {
+  background: var(--brass);
+}
+.switchOn .switchThumb {
+  transform: translateX(18px);
+  background: var(--brass-deep);
+}
+
+/* ===== Volume ===== */
+.volumeRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.volumeValue {
+  font: 600 13px var(--mono);
+  color: var(--brass-deep);
+  font-variant-numeric: tabular-nums;
+  min-width: 4ch;
+  text-align: right;
+}
+
+/* Slider em camadas: canaleta em baixo relevo, preenchimento em alto relevo
+   e input transparente por cima controlando a pill */
+.sliderShell {
+  position: relative;
+  flex: 1;
+  height: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.trackGroove {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 5px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: var(--card-edge-press);
+}
+
+.trackFill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 7px;
+  border-radius: 999px;
+  background: var(--brass-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.55);
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
+}
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 28px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--brass-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.55);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+/* Hover: halo translúcido acompanhando o formato da pill */
+.slider::-webkit-slider-thumb:hover {
+  background: var(--brass-bright);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.55),
+    0 0 0 5px rgba(194, 168, 120, 0.18);
+}
+.slider::-moz-range-thumb {
+  width: 28px;
+  height: 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--brass-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.55);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.slider::-moz-range-thumb:hover {
+  background: var(--brass-bright);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.55),
+    0 0 0 5px rgba(194, 168, 120, 0.18);
+}
+
+@media (max-width: 640px) {
+  .tab {
+    letter-spacing: 0.02em;
+  }
+}
