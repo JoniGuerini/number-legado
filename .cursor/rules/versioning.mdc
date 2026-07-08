@@ -1,5 +1,5 @@
 ---
-description: Version numbering convention (semver, WoW-style) for releases and patch notes
+description: Version numbering convention (semver, WoW-style) for releases
 alwaysApply: true
 ---
 
@@ -27,7 +27,5 @@ Rules:
 - The game is pre-launch: stay within `0.x.x`. **`1.0.0` is the game launch and
   is bumped ONLY when the user explicitly says so** — never bump the MAJOR on
   your own.
-- Keep `package.json` `version` and the top entry of `src/data/changelog.ts`
-  in sync on every release.
-- Each patch note entry records the release `date` and, going forward, its
-  `time` (HH:MM). Old entries have no time and render `—`; do not backfill.
+- `package.json` `version` is the single source of truth (there is no patch
+  notes page/changelog file anymore); bump it on every release.

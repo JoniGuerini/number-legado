@@ -6,8 +6,7 @@ alwaysApply: true
 # Language Convention
 
 - English is the project's canonical language: README, docs, code comments,
-  commit messages, page metadata and new patch notes (`src/data/changelog.ts`)
-  are written in English.
+  commit messages and page metadata are written in English.
 - Portuguese (Brasil) and Español are player-facing UI locales. All UI
   strings live in `src/lib/locale/` — one file per language (`pt.ts`, `en.ts`,
   `es.ts`) plus `index.ts` with the store/hook. `pt.ts` defines the key set
@@ -17,8 +16,6 @@ alwaysApply: true
 - On first visit the UI language is auto-detected from the OS/browser
   language (pt → pt-BR, anything else → English); an explicit choice in
   Settings overrides it and is persisted.
-- Old patch notes written in Portuguese are historical documents — do not
-  translate them.
 - Conversation with the user happens in Portuguese (see user rules), but
   everything committed to the repo is in English.
 - UI copy is short and essential: hints/descriptions state only what the user

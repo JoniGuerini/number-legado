@@ -1,24 +1,20 @@
 /** Persistência em localStorage com sistema de slots de save.
 
-    Cada slot agrupa os três jogos; o conteúdo dos saves e o motor que os
-    consome não mudam — os slots só resolvem QUAL chave é lida/gravada, então
-    a sincronia determinística e o catch-up ficam intactos. */
+    O conteúdo dos saves e o motor que os consome não mudam — os slots só
+    resolvem QUAL chave é lida/gravada, então a sincronia determinística e o
+    catch-up ficam intactos. */
 
 import { translate } from './locale';
 
-export type SaveGame = 'geradores' | 'ciclos' | 'reino';
+export type SaveGame = 'geradores';
 
-/** Chaves antigas (pré-slots), migradas para o primeiro slot. O Reino nasceu
-    já no sistema de slots, então nunca teve chave legada (o valor abaixo não
-    existe no storage e a migração simplesmente o ignora). */
+/** Chaves antigas (pré-slots), migradas para o primeiro slot. */
 const LEGACY_KEYS: Record<SaveGame, string> = {
   geradores: 'number-legado:geradores',
-  ciclos: 'number-legado:ciclos',
-  reino: 'number-legado:reino',
 };
 
 const SLOTS_META_KEY = 'number-legado:slots';
-const GAMES: SaveGame[] = ['geradores', 'ciclos', 'reino'];
+const GAMES: SaveGame[] = ['geradores'];
 
 export interface SlotMeta {
   id: string;

@@ -1,8 +1,8 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import Decimal from 'break_eternity.js';
 import { useVirtualRows } from '../../hooks/useVirtualRows';
-import { fmt, fmtRate, fmtTime } from '../../lib/format';
-import { getDateLocale, useI18n } from '../../lib/locale';
+import { fmt, fmtCost, fmtRate, fmtTime } from '../../lib/format';
+import { useI18n } from '../../lib/locale';
 import { loadSave, saveKeyFor, writeSave } from '../../lib/storage';
 import styles from './Generators.module.css';
 
@@ -13,6 +13,8 @@ interface Gen {
   bought: number;
   /** Tempo de jogo (em segundos) em que a primeira unidade foi comprada. */
   unlockedAt?: number;
+  /** Quantidade do tier anterior no momento do desbloqueio (log da Atividade). */
+  prevAtUnlock?: Decimal;
 }
 
 type Mode = 'manual' | 'auto';
@@ -36,7 +38,12 @@ interface Game {
 interface GenSave {
   base: string;
   totalProduced?: string;
-  gens: { amount: string; bought: number; unlockedAt?: number }[];
+  gens: {
+    amount: string;
+    bought: number;
+    unlockedAt?: number;
+    prevAtUnlock?: string;
+  }[];
   uptime: number;
   mode?: Mode;
   started?: boolean;
@@ -86,6 +93,8 @@ function loadGame(saveKey: string): Game {
       amount: new Decimal(g.amount),
       bought: g.bought,
       unlockedAt: g.unlockedAt,
+      prevAtUnlock:
+        g.prevAtUnlock !== undefined ? new Decimal(g.prevAtUnlock) : undefined,
     })),
     mode: s.mode ?? 'manual',
     started,
@@ -97,19 +106,52 @@ function loadGame(saveKey: string): Game {
   // vem do relógio de parede, então o jogo corre atrás sozinho ao carregar.
 }
 
-/** Agressividade da curva de custos: cada tier custa 10^(2c) a mais que o
-    degrau anterior, fazendo o intervalo entre desbloqueios crescer ~2-3% por
-    gerador (dobra a cada ~30). Tunado via scripts/simulate-balance.mjs. */
-const COST_CURVE = 0.004;
+/** Encarecimento por compra: cada unidade comprada custa 10% a mais. */
+const COST_GROWTH = 1.1;
 
-/** Custo do gerador N (índice i): 10^(i + c·i²), dobrando a cada compra.
-    O termo quadrático faz cada desbloqueio demorar mais que o anterior.
-    O round() corrige o erro de ponto flutuante do pow do break_eternity
-    (2^3 sai como 7.999...), já que custos são sempre inteiros. */
+/** Custo do gerador N (índice i): expoente triangular i·(i+1)/2 — o salto
+    entre geradores cresce a cada degrau (×10, ×100, ×1000…): 1, 10, 1K, 1M,
+    10B… +10% a cada compra. */
 function costOf(i: number, bought: number): Decimal {
-  return Decimal.pow(10, i + COST_CURVE * i * i)
-    .mul(Decimal.pow(2, bought))
-    .round();
+  return Decimal.pow(10, (i * (i + 1)) / 2).mul(
+    Decimal.pow(COST_GROWTH, bought)
+  );
+}
+
+/** Base prevista após t segundos, assumindo nenhuma compra nova. A cascata
+    sem compras é um sistema linear nilpotente com solução fechada:
+    base(t) = base + Σ_j a_j · (0.1t)^(j+1) / (j+1)!
+    (cada termo é a contribuição do gerador j descendo j+1 níveis). */
+function baseAt(game: Game, t: number): Decimal {
+  const x = new Decimal(t).mul(PROD_PER_UNIT); // 0.1t
+  let value = game.base;
+  let factor = x; // (0.1t)^(j+1) / (j+1)! — começa em j=0
+  for (let j = 0; j < game.gens.length; j++) {
+    const amount = game.gens[j].amount;
+    if (amount.gt(0)) value = value.add(amount.mul(factor));
+    factor = factor.mul(x).div(j + 2);
+  }
+  return value;
+}
+
+/** Horizonte máximo da previsão de desbloqueio (10 anos). */
+const MAX_ETA_S = 10 * 365 * 86400;
+
+/** Segundos até a base alcançar o custo, contando toda a aceleração futura
+    da cascata (sem compras novas). null = fora do horizonte/sem produção. */
+function timeToUnlock(game: Game, cost: Decimal): number | null {
+  if (game.base.gte(cost)) return 0;
+  if (baseAt(game, MAX_ETA_S).lt(cost)) return null;
+
+  // base(t) é crescente — busca binária até a resolução do timestep
+  let lo = 0;
+  let hi = MAX_ETA_S;
+  while (hi - lo > 0.25) {
+    const mid = (lo + hi) / 2;
+    if (baseAt(game, mid).gte(cost)) hi = mid;
+    else lo = mid;
+  }
+  return hi;
 }
 
 /** Timestep FIXO da simulação. O jogo avança sempre em passos de exatamente
@@ -159,6 +201,7 @@ function advance(g: Game, nSteps: number): Game {
         gens[i].amount = gens[i].amount.add(1);
         if (wasLocked) {
           gens[i].unlockedAt = uptime;
+          if (i > 0) gens[i].prevAtUnlock = gens[i - 1].amount;
           if (i === last) gens.push(newGen());
         }
         break;
@@ -238,6 +281,7 @@ export default function Generators() {
           amount: x.amount.toString(),
           bought: x.bought,
           unlockedAt: x.unlockedAt,
+          prevAtUnlock: x.prevAtUnlock?.toString(),
         })),
         uptime: g.uptime,
         mode: g.mode,
@@ -285,7 +329,10 @@ export default function Generators() {
       const gens = g.gens.map((x) => ({ ...x }));
       gens[i].bought += 1;
       gens[i].amount = gens[i].amount.add(1);
-      if (gens[i].bought === 1) gens[i].unlockedAt = g.uptime;
+      if (gens[i].bought === 1) {
+        gens[i].unlockedAt = g.uptime;
+        if (i > 0) gens[i].prevAtUnlock = gens[i - 1].amount;
+      }
       // Primeira compra do último gerador desbloqueia o próximo.
       if (i === g.gens.length - 1) gens.push(newGen());
 
@@ -320,78 +367,32 @@ export default function Generators() {
       ? new Decimal(0)
       : game.gens[0].amount.mul(PROD_PER_UNIT).mul(partial);
   const dispBase = game.base.add(partialIncome);
-  const dispTotal = game.totalProduced.add(partialIncome);
 
-  const dispUptime = game.uptime + (game.gens[0].bought > 0 ? partial : 0);
+  // ===== Timer de desbloqueio =====
+  // Previsão em timestamp absoluto, cacheada por assinatura de compras: a
+  // cascata sem compras é determinística, então o timer só conta regressivo —
+  // ele muda de valor apenas quando alguma unidade nova é comprada.
+  const etaCacheRef = useRef<{
+    signature: string;
+    etas: Map<number, number | null>;
+  }>({ signature: '', etas: new Map() });
+
+  const unlockEtaAt = (i: number, cost: Decimal): number | null => {
+    const signature = game.gens.map((g) => g.bought).join(',');
+    const cache = etaCacheRef.current;
+    if (cache.signature !== signature) {
+      cache.signature = signature;
+      cache.etas = new Map();
+    }
+    if (!cache.etas.has(i)) {
+      const seconds = timeToUnlock(game, cost);
+      cache.etas.set(i, seconds === null ? null : Date.now() + seconds * 1000);
+    }
+    return cache.etas.get(i) ?? null;
+  };
 
   // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo)
   const virtual = useVirtualRows(listRef, game.gens.length, 8);
-
-  /** Baixa um .csv com a progressão atual: metadados + uma linha por gerador,
-      com valores brutos (análise) e formatados (leitura). */
-  const exportCsv = () => {
-    const lines: string[] = [];
-
-    lines.push('chave,valor');
-    lines.push(
-      `inicio_do_save,${game.startedAt !== undefined ? new Date(game.startedAt).toISOString() : ''}`
-    );
-    lines.push(`tempo_de_jogo_s,${game.uptime.toFixed(1)}`);
-    lines.push(`tempo_de_jogo_fmt,${fmtTime(game.uptime)}`);
-    lines.push(`modo,${game.mode}`);
-    lines.push(`numero_base,${game.base.toString()}`);
-    lines.push(`numero_base_fmt,${fmt(game.base)}`);
-    lines.push(`total_produzido,${game.totalProduced.toString()}`);
-    lines.push(`total_produzido_fmt,${fmt(game.totalProduced)}`);
-    lines.push(
-      `producao_base_por_s,${game.gens[0].amount.mul(PROD_PER_UNIT).toString()}`
-    );
-    lines.push('');
-
-    lines.push(
-      'gerador,comprados,possui,possui_fmt,produz_por_s,produz_fmt,desbloqueio_s,desbloqueio_fmt,delta_desde_anterior_s,delta_fmt,aceleracao_s'
-    );
-    game.gens.forEach((gen, i) => {
-      const prod = gen.amount.mul(PROD_PER_UNIT);
-      const prev = i === 0 ? 0 : game.gens[i - 1].unlockedAt;
-      const prevPrev = i <= 1 ? 0 : game.gens[i - 2].unlockedAt;
-      const delta =
-        gen.unlockedAt !== undefined && prev !== undefined
-          ? gen.unlockedAt - prev
-          : undefined;
-      const prevDelta =
-        prev !== undefined && prevPrev !== undefined ? prev - prevPrev : undefined;
-      const accel =
-        delta !== undefined && prevDelta !== undefined
-          ? delta - prevDelta
-          : undefined;
-
-      lines.push(
-        [
-          i + 1,
-          gen.bought,
-          gen.amount.toString(),
-          fmt(gen.amount),
-          prod.toString(),
-          fmtRate(prod),
-          gen.unlockedAt !== undefined ? gen.unlockedAt.toFixed(1) : '',
-          gen.unlockedAt !== undefined ? fmtTime(gen.unlockedAt) : '',
-          delta !== undefined ? delta.toFixed(1) : '',
-          delta !== undefined ? fmtTime(delta) : '',
-          accel !== undefined ? accel.toFixed(1) : '',
-        ].join(',')
-      );
-    });
-
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `geradores-${stamp}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   // Tela de escolha de modo (aparece com save resetado, antes de iniciar)
   if (!game.started) {
@@ -432,31 +433,6 @@ export default function Generators() {
   return (
     <div className={styles.wrap}>
       <div className={styles.corner}>
-        <div className={styles.timePill}>
-          <span className={styles.timeValue}>
-            {game.startedAt !== undefined
-              ? new Date(game.startedAt).toLocaleString(getDateLocale(), {
-                  day: '2-digit',
-                  month: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                })
-              : '—'}
-          </span>
-          <span className={styles.timeLabel}>{t('common.startLabel')}</span>
-        </div>
-        <div className={styles.timePill}>
-          <span className={styles.timeValue}>{fmtTime(dispUptime)}</span>
-          <span className={styles.timeLabel}>{t('common.time')}</span>
-        </div>
-        <div className={styles.timePill}>
-          <span className={styles.timeValue}>{fmt(dispTotal)}</span>
-          <span className={styles.timeLabel}>{t('common.produced')}</span>
-        </div>
-        <button className={styles.exportBtn} onClick={exportCsv}>
-          {t('common.exportCsv')}
-        </button>
         <button
           className={`${styles.exportBtn} ${isAuto ? styles.toggleOn : ''}`}
           onClick={() =>
@@ -502,10 +478,17 @@ export default function Generators() {
           const cost = costOf(i, gen.bought);
           const target = i === 0 ? 'base' : `${i}`;
 
-          // Gerador recém-desbloqueado (nunca comprado): só o botão, centralizado,
-          // com barra de progresso mostrando o quão perto o jogador está do custo.
+          // Gerador recém-desbloqueado (nunca comprado): só o botão, com barra
+          // de progresso, % à esquerda, custo no centro e timer à direita.
           if (gen.bought === 0) {
             const progress = Math.min(dispBase.div(cost).toNumber(), 1);
+            const etaAt = progress >= 1 ? null : unlockEtaAt(i, cost);
+            const etaText =
+              progress >= 1
+                ? fmtTime(0)
+                : etaAt === null
+                  ? '—'
+                  : fmtTime(Math.max((etaAt - Date.now()) / 1000, 0));
             return (
               <button
                 key={i}
@@ -518,7 +501,13 @@ export default function Generators() {
                   style={{ width: `${progress * 100}%` }}
                   aria-hidden="true"
                 />
-                <span className={styles.progressLabel}>{fmt(cost)}</span>
+                <span className={`${styles.progressMeta} ${styles.progressPct}`}>
+                  {(Math.floor(progress * 10000) / 100).toFixed(2)}%
+                </span>
+                <span className={styles.progressLabel}>{fmtCost(cost)}</span>
+                <span className={`${styles.progressMeta} ${styles.progressEta}`}>
+                  {etaText}
+                </span>
               </button>
             );
           }
@@ -548,7 +537,7 @@ export default function Generators() {
                 disabled={isAuto || game.base.lt(cost)}
                 onClick={() => buy(i)}
               >
-                {fmt(cost)}
+                {fmtCost(cost)}
               </button>
             </div>
           );

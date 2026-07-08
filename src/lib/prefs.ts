@@ -48,9 +48,6 @@ export interface VideoPrefs {
   showMemory: boolean;
   /** Total de nós de DOM na página — proxy do peso da árvore renderizada. */
   showDomNodes: boolean;
-  /** Barras de progresso do ciclo (Ciclos e Reino). Coluna de tempo já mostra
-      o restante, então o jogador pode ocultá-las por gosto. */
-  showCycleBars: boolean;
   theme: ThemeId;
 }
 
@@ -61,8 +58,6 @@ const DEFAULTS: VideoPrefs = {
   showBattery: false,
   showMemory: false,
   showDomNodes: false,
-  // Exceção: barras de progresso do ciclo vêm ligadas.
-  showCycleBars: true,
   theme: 'neutro',
 };
 
@@ -101,7 +96,7 @@ export function setVideoPref<K extends keyof VideoPrefs>(
   listeners.forEach((fn) => fn());
 }
 
-/** Restaura as preferências de vídeo (tema + telemetria + barras) ao padrão.
+/** Restaura as preferências de vídeo (tema + telemetria) ao padrão.
     Preserva as chaves de som que dividem a mesma entrada de config. */
 export function resetVideoPrefs(): void {
   prefs = { ...DEFAULTS };

@@ -91,7 +91,7 @@ export function fmtAge(seconds: number): string {
   return `${d}d ${(h % 24).toString().padStart(2, '0')}h`;
 }
 
-/** Tempo decorrido em segundos → "2m 05s" / "45s" / "1h 12m".
+/** Tempo decorrido em segundos → "2m 05s" / "45s" / "1h 12m" / "3d 07h".
     Arredonda pra BAIXO (semântica de cronômetro): "5s" só aparece quando
     5s reais já passaram. (O ceil original do Coders era pra tempo restante.) */
 export function fmtTime(seconds: number): string {
@@ -100,5 +100,7 @@ export function fmtTime(seconds: number): string {
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ${(s % 60).toString().padStart(2, '0')}s`;
   const h = Math.floor(m / 60);
-  return `${h}h ${(m % 60).toString().padStart(2, '0')}m`;
+  if (h < 24) return `${h}h ${(m % 60).toString().padStart(2, '0')}m`;
+  const d = Math.floor(h / 24);
+  return `${d}d ${(h % 24).toString().padStart(2, '0')}h`;
 }

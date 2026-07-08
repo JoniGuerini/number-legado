@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 import Generators from './components/Generators/Generators';
-import Cycles from './components/Cycles/Cycles';
-import Reino from './components/Reino/Reino';
 import Activity from './components/Activity/Activity';
-import Chat from './components/Chat/Chat';
-import PatchNotes from './components/PatchNotes/PatchNotes';
 import Settings from './components/Settings/Settings';
 import FpsMeter from './components/FpsMeter/FpsMeter';
 import FullscreenToggle from './components/FullscreenToggle/FullscreenToggle';
@@ -23,12 +19,12 @@ import {
 } from './lib/storage';
 import styles from './App.module.css';
 
-export type GameTab = 'geradores' | 'ciclos' | 'reino';
-type Page = GameTab | 'atividade' | 'chat' | 'notas';
+export type GameTab = 'geradores';
+type Page = GameTab | 'atividade';
 
 /* A última página visitada sobrevive ao refresh */
 const PAGE_KEY = 'number-legado:page';
-const PAGES: Page[] = ['reino', 'geradores', 'ciclos', 'atividade', 'chat', 'notas'];
+const PAGES: Page[] = ['geradores', 'atividade'];
 
 function readStoredPage(): Page {
   try {
@@ -37,7 +33,7 @@ function readStoredPage(): Page {
   } catch {
     // Sem localStorage — cai no padrão
   }
-  return 'reino';
+  return 'geradores';
 }
 
 export default function App() {
@@ -92,11 +88,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [settingsOpen]);
   // Trocar a key remonta o componente da aba, zerando só aquele jogo.
-  const [resetKeys, setResetKeys] = useState({
-    geradores: 0,
-    ciclos: 0,
-    reino: 0,
-  });
+  const [resetKeys, setResetKeys] = useState({ geradores: 0 });
 
   // ===== Slots de save =====
   const [slots, setSlots] = useState(listSlots);
@@ -153,33 +145,13 @@ export default function App() {
         <Generators key={`${slotEpoch}:${resetKeys.geradores}`} />
       </main>
       <main
-        className={`${styles.contentFull} ${page !== 'ciclos' ? styles.hidden : ''}`}
-      >
-        <Cycles key={`${slotEpoch}:${resetKeys.ciclos}`} />
-      </main>
-      <main
-        className={`${styles.contentFull} ${page !== 'reino' ? styles.hidden : ''}`}
-      >
-        <Reino key={`${slotEpoch}:${resetKeys.reino}`} />
-      </main>
-      <main
         className={`${styles.contentFull} ${page !== 'atividade' ? styles.hidden : ''}`}
       >
-        {/* Remonta ao zerar um dos modos (ou trocar de slot) para o log acompanhar */}
+        {/* Remonta ao zerar o jogo (ou trocar de slot) para o log acompanhar */}
         <Activity
-          key={`${slotEpoch}:${resetKeys.ciclos}:${resetKeys.geradores}:${resetKeys.reino}`}
+          key={`${slotEpoch}:${resetKeys.geradores}`}
           onNavigate={setPage}
         />
-      </main>
-      <main
-        className={`${styles.contentFull} ${page !== 'chat' ? styles.hidden : ''}`}
-      >
-        <Chat />
-      </main>
-      <main
-        className={`${styles.contentFull} ${page !== 'notas' ? styles.hidden : ''}`}
-      >
-        <PatchNotes />
       </main>
 
       <footer className={styles.footer}>

@@ -32,25 +32,18 @@ import {
 } from '../../lib/storage';
 import styles from './Settings.module.css';
 
-const GAMES: GameTab[] = ['geradores', 'ciclos', 'reino'];
+const GAMES: GameTab[] = ['geradores'];
 
-/** Campos que sinalizam progresso iniciado em cada tipo de save. */
+/** Campos que sinalizam progresso iniciado no save. */
 interface SaveProbe {
   started?: boolean;
-  /** Reino: uma linha por chave; conta se qualquer linha foi iniciada. */
-  lines?: Record<string, { started?: boolean } | undefined>;
 }
 
-/** Há progresso para zerar naquele modo? (jogo de fato iniciado, não só o
-    save gravado automaticamente). Geradores/Ciclos contam pela saída da tela
-    de escolha de modo; Reino, por qualquer linha iniciada. */
+/** Há progresso para zerar? (jogo de fato iniciado, não só o save gravado
+    automaticamente — conta pela saída da tela de escolha de modo). */
 function hasProgress(slotId: string, game: GameTab): boolean {
   const s = loadSave<SaveProbe>(saveKeyForSlot(slotId, game));
-  if (!s) return false;
-  if (game === 'reino') {
-    return Object.values(s.lines ?? {}).some((l) => l?.started === true);
-  }
-  return s.started === true;
+  return s?.started === true;
 }
 
 const VIDEO_TOGGLES: {
@@ -484,24 +477,6 @@ export default function Settings({
                   </button>
                 );
               })}
-
-              <span className={styles.subLabel}>{t('video.gameplay')}</span>
-              <button
-                className={styles.option}
-                role="switch"
-                aria-checked={videoPrefs.showCycleBars}
-                onClick={() =>
-                  setVideoPref('showCycleBars', !videoPrefs.showCycleBars)
-                }
-              >
-                <span>{t('video.cycleBars')}</span>
-                <span
-                  className={`${styles.switch} ${videoPrefs.showCycleBars ? styles.switchOn : ''}`}
-                  aria-hidden="true"
-                >
-                  <span className={styles.switchThumb} />
-                </span>
-              </button>
             </div>
           </section>
         )}

@@ -7,44 +7,7 @@
   gap: 14px;
 }
 
-/* Abas internas por modo, ocupando a largura toda */
-.tabs {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-  width: 100%;
-}
-
-.tab {
-  flex: 1;
-  background: var(--paper);
-  border: none;
-  box-shadow: var(--card-edge);
-  border-radius: 4px;
-  padding: 11px 26px;
-  font: 500 12px var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
-}
-.tab:hover {
-  background: var(--surface);
-  color: var(--ink);
-}
-.tab:active {
-  box-shadow: var(--card-edge-press);
-  transform: translateY(1px);
-}
-
-.tabActive,
-.tabActive:hover {
-  background: var(--surface-deep);
-  color: var(--brass-deep);
-}
-
-/* Estado vazio com convite pra começar o modo */
+/* Estado vazio com convite pra começar o jogo */
 .emptyText {
   font: 400 13px/1.6 var(--mono);
   color: var(--ink-muted);
@@ -55,6 +18,12 @@
 .summary {
   display: flex;
   gap: 8px;
+}
+
+/* Barra de ações abaixo do resumo (export) */
+.actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .summaryItem {

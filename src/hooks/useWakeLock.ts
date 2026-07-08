@@ -17,6 +17,12 @@ export function useWakeLock() {
       if (disposed || document.visibilityState !== 'visible') return;
       try {
         lock = await navigator.wakeLock.request('screen');
+        // O sistema pode revogar o lock com a página ainda visível (ex.:
+        // economia de bateria); readquire na hora para manter a tela acesa.
+        lock.addEventListener('release', () => {
+          lock = null;
+          void acquire();
+        });
       } catch {
         // Sem permissão/bateria baixa — segue sem wake lock
       }

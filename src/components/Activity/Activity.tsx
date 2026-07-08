@@ -1,35 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
-import { fmtTime } from '../../lib/format';
-import { useI18n, type TKey } from '../../lib/locale';
+import Decimal from 'break_eternity.js';
+import { fmt, fmtTime } from '../../lib/format';
+import { getDateLocale, useI18n } from '../../lib/locale';
 import { loadSave, saveKeyFor } from '../../lib/storage';
-import { ENABLED_LINES } from '../Reino/lines';
 // Reusa o esqueleto visual das listas de geradores (scroll, fades)
 import gstyles from '../Generators/Generators.module.css';
 import styles from './Activity.module.css';
 
-type LogGame = 'ciclos' | 'geradores' | 'reino';
+type LogGame = 'geradores';
 
-const GAMES: LogGame[] = ['reino', 'geradores', 'ciclos'];
-
-/** Linha do Reino exibida na Atividade. Só a Comida está jogável por ora;
-    quando houver mais linhas ativas, dá para virar sub-abas aqui. */
-const REINO_LINE = ENABLED_LINES[0]?.id;
-
-/** Campos comuns aos saves que interessam ao log (Ciclos/Geradores e cada
-    linha do Reino compartilham essa forma). */
+/** Campos do save que interessam ao log. */
 interface GameSaveLite {
-  gens: { bought: number; unlockedAt?: number }[];
+  gens: { bought: number; unlockedAt?: number; prevAtUnlock?: string }[];
   uptime: number;
-}
-
-/** Save do Reino: uma linha por chave. */
-interface ReinoSaveLite {
-  lines?: Partial<Record<string, GameSaveLite>>;
+  /** Date.now() do clique em Iniciar. */
+  startedAt?: number;
+  /** Total de base já produzido na vida do save. */
+  totalProduced?: string;
 }
 
 interface Entry {
   gen: number;
   unlockedAt: number;
+  /** Quantidade do tier anterior no momento do desbloqueio. */
+  prevAtUnlock?: string;
   /** Intervalo desde o desbloqueio anterior. */
   delta?: number;
   /** Diferença entre este intervalo e o anterior (ritmo). */
@@ -43,9 +37,11 @@ function buildEntries(save: GameSaveLite | null | undefined): {
 } {
   if (!save) return { entries: [], uptime: 0 };
 
-  const unlocked = save.gens
-    .map((g, i) => ({ gen: i + 1, unlockedAt: g.unlockedAt }))
-    .filter((e): e is { gen: number; unlockedAt: number } => e.unlockedAt !== undefined);
+  const unlocked = save.gens.flatMap((g, i) =>
+    g.unlockedAt === undefined
+      ? []
+      : [{ gen: i + 1, unlockedAt: g.unlockedAt, prevAtUnlock: g.prevAtUnlock }]
+  );
 
   const entries = unlocked.map((e, idx) => {
     const prev = idx === 0 ? 0 : unlocked[idx - 1].unlockedAt;
@@ -62,45 +58,41 @@ function buildEntries(save: GameSaveLite | null | undefined): {
   return { entries, uptime: save.uptime };
 }
 
-type Keys = Record<LogGame, string>;
-
-/** Lê o log do modo. O Reino mora numa chave só (uma linha por sub-chave),
-    então extraímos a linha habilitada. */
-function readLog(game: LogGame, keys: Keys): { entries: Entry[]; uptime: number } {
-  if (game === 'reino') {
-    if (!REINO_LINE) return { entries: [], uptime: 0 };
-    const save = loadSave<ReinoSaveLite>(keys.reino);
-    return buildEntries(save?.lines?.[REINO_LINE]);
-  }
-  return buildEntries(loadSave<GameSaveLite>(keys[game]));
+function readLog(key: string): {
+  entries: Entry[];
+  uptime: number;
+  startedAt?: number;
+  totalProduced?: string;
+} {
+  const save = loadSave<GameSaveLite>(key);
+  return {
+    ...buildEntries(save),
+    startedAt: save?.startedAt,
+    totalProduced: save?.totalProduced,
+  };
 }
 
 interface ActivityProps {
-  /** Leva o jogador para a aba do modo (CTA do estado vazio). */
+  /** Leva o jogador para a aba do jogo (CTA do estado vazio). */
   onNavigate: (game: LogGame) => void;
 }
 
-/** Log de desbloqueios, com abas por modo e cada tempo explicado. */
+/** Log de desbloqueios, com cada tempo explicado. */
 export default function Activity({ onNavigate }: ActivityProps) {
   const { t } = useI18n();
-  // Chaves dos saves do slot ativo (trocar de slot remonta o componente)
-  const [keys] = useState<Keys>(() => ({
-    ciclos: saveKeyFor('ciclos'),
-    geradores: saveKeyFor('geradores'),
-    reino: saveKeyFor('reino'),
-  }));
-  const [game, setGame] = useState<LogGame>('reino');
-  const [log, setLog] = useState(() => readLog('reino', keys));
-  const { entries, uptime } = log;
+  // Chave do save do slot ativo (trocar de slot remonta o componente)
+  const [key] = useState(() => saveKeyFor('geradores'));
+  const [log, setLog] = useState(() => readLog(key));
+  const { entries, uptime, startedAt, totalProduced } = log;
   const listRef = useRef<HTMLDivElement>(null);
 
   // O save é gravado 1x/s; reler no mesmo ritmo mantém o log vivo.
   useEffect(() => {
-    setLog(readLog(game, keys));
-    const id = setInterval(() => setLog(readLog(game, keys)), 1000);
+    setLog(readLog(key));
+    const id = setInterval(() => setLog(readLog(key)), 1000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game]);
+  }, []);
 
   // Mesma animação de scroll das listas de geradores (alvo recalculado por frame)
   const scrollAnimRef = useRef(0);
@@ -131,17 +123,12 @@ export default function Activity({ onNavigate }: ActivityProps) {
   // rolado para cima para ler o histórico.
   const stickRef = useRef(true);
 
-  // Trocar de modo volta a colar no fim
-  useEffect(() => {
-    stickRef.current = true;
-  }, [game]);
-
-  // Entrada nova no log (ou troca de modo) → rola até o fim
+  // Entrada nova no log → rola até o fim
   const entryCount = entries.length;
   useEffect(() => {
     if (stickRef.current) scrollToEnd();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entryCount, game]);
+  }, [entryCount]);
 
   // Setinhas esmaecidas: aparecem quando há conteúdo além das bordas
   const [edges, setEdges] = useState({ above: false, below: false });
@@ -174,7 +161,7 @@ export default function Activity({ onNavigate }: ActivityProps) {
     observer.observe(el);
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entryCount, game]);
+  }, [entryCount]);
 
   // ===== Resumo do header =====
   const last = entries[entries.length - 1];
@@ -182,28 +169,75 @@ export default function Activity({ onNavigate }: ActivityProps) {
     entries.length > 1 ? last.unlockedAt / (entries.length - 1) : undefined;
   const sinceLast = last ? Math.max(uptime - last.unlockedAt, 0) : 0;
 
-  const gameName = t(`nav.${game}`);
+  /** Baixa um .csv com o que a Atividade mostra: o resumo do header e uma
+      linha por desbloqueio, com valores brutos (análise) e formatados. */
+  const exportCsv = () => {
+    if (entries.length === 0) return;
+
+    const lines: string[] = [];
+
+    lines.push('chave,valor');
+    lines.push(
+      `inicio_do_save,${startedAt !== undefined ? new Date(startedAt).toISOString() : ''}`
+    );
+    lines.push(`geradores_desbloqueados,${entries.length}`);
+    lines.push(`tempo_de_jogo_s,${uptime.toFixed(1)}`);
+    lines.push(`tempo_de_jogo_fmt,${fmtTime(uptime)}`);
+    if (totalProduced !== undefined) {
+      lines.push(`total_produzido,${totalProduced}`);
+      lines.push(`total_produzido_fmt,${fmt(new Decimal(totalProduced))}`);
+    }
+    if (avgInterval !== undefined) {
+      lines.push(`media_intervalo_s,${avgInterval.toFixed(1)}`);
+      lines.push(`media_intervalo_fmt,${fmtTime(avgInterval)}`);
+    }
+    lines.push(`desde_ultimo_s,${sinceLast.toFixed(1)}`);
+    lines.push(`desde_ultimo_fmt,${fmtTime(sinceLast)}`);
+    lines.push('');
+
+    lines.push(
+      'gerador,desbloqueio_s,desbloqueio_fmt,tier_anterior,tier_anterior_fmt,delta_desde_anterior_s,delta_fmt,aceleracao_s,aceleracao_fmt'
+    );
+    entries.forEach((entry) => {
+      lines.push(
+        [
+          entry.gen,
+          entry.unlockedAt.toFixed(1),
+          fmtTime(entry.unlockedAt),
+          entry.prevAtUnlock ?? '',
+          entry.prevAtUnlock !== undefined
+            ? fmt(new Decimal(entry.prevAtUnlock))
+            : '',
+          entry.delta !== undefined ? entry.delta.toFixed(1) : '',
+          entry.delta !== undefined ? fmtTime(entry.delta) : '',
+          entry.accel !== undefined ? entry.accel.toFixed(1) : '',
+          entry.accel !== undefined
+            ? `${entry.accel > 0 ? '+' : entry.accel < 0 ? '-' : ''}${fmtTime(Math.abs(entry.accel))}`
+            : '',
+        ].join(',')
+      );
+    });
+
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `atividade-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const gameName = t('nav.geradores');
 
   return (
     <div className={styles.wrap}>
-      <nav className={styles.tabs}>
-        {GAMES.map((g) => (
-          <button
-            key={g}
-            className={`${styles.tab} ${game === g ? styles.tabActive : ''}`}
-            onClick={() => setGame(g)}
-          >
-            {t(`nav.${g}`)}
-          </button>
-        ))}
-      </nav>
-
       {entries.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles.emptyText}>
             {t('activity.empty', { game: gameName })}
           </p>
-          <button className="btn-primary" onClick={() => onNavigate(game)}>
+          <button className="btn-primary" onClick={() => onNavigate('geradores')}>
             {t('activity.cta', { game: gameName })}
           </button>
         </div>
@@ -211,12 +245,37 @@ export default function Activity({ onNavigate }: ActivityProps) {
         <>
           <div className={styles.summary}>
             <div className={styles.summaryItem}>
+              <span className={styles.summaryValue}>
+                {startedAt !== undefined
+                  ? new Date(startedAt).toLocaleString(getDateLocale(), {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : '—'}
+              </span>
+              <span className={styles.summaryLabel}>
+                {t('common.startLabel')}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
               <span className={styles.summaryValue}>{entries.length}</span>
               <span className={styles.summaryLabel}>{t('activity.unlocked')}</span>
             </div>
             <div className={styles.summaryItem}>
               <span className={styles.summaryValue}>{fmtTime(uptime)}</span>
               <span className={styles.summaryLabel}>{t('activity.playTime')}</span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryValue}>
+                {totalProduced !== undefined
+                  ? fmt(new Decimal(totalProduced))
+                  : '—'}
+              </span>
+              <span className={styles.summaryLabel}>
+                {t('common.produced')}
+              </span>
             </div>
             <div className={styles.summaryItem}>
               <span className={styles.summaryValue}>
@@ -230,6 +289,12 @@ export default function Activity({ onNavigate }: ActivityProps) {
               <span className={styles.summaryValue}>{fmtTime(sinceLast)}</span>
               <span className={styles.summaryLabel}>{t('activity.sinceLast')}</span>
             </div>
+          </div>
+
+          <div className={styles.actions}>
+            <button className={gstyles.exportBtn} onClick={exportCsv}>
+              {t('common.exportCsv')}
+            </button>
           </div>
 
           <div className={gstyles.listWrap}>
@@ -247,9 +312,7 @@ export default function Activity({ onNavigate }: ActivityProps) {
               {entries.map((entry) => (
                 <div key={entry.gen} className={styles.entry}>
                   <span className={styles.entryTitle}>
-                    {game === 'reino' && REINO_LINE
-                      ? t(`reino.gen.${REINO_LINE}.${entry.gen}` as TKey)
-                      : t('activity.generator', { n: entry.gen })}
+                    {t('activity.generator', { n: entry.gen })}
                   </span>
 
                   <div className={styles.fields}>
@@ -259,6 +322,17 @@ export default function Activity({ onNavigate }: ActivityProps) {
                       </span>
                       <span className={styles.fieldValue}>
                         {t('activity.ofPlay', { time: fmtTime(entry.unlockedAt) })}
+                      </span>
+                    </div>
+
+                    <div className={styles.field}>
+                      <span className={styles.fieldLabel}>
+                        {t('activity.prevTier')}
+                      </span>
+                      <span className={styles.fieldValue}>
+                        {entry.prevAtUnlock !== undefined
+                          ? fmt(new Decimal(entry.prevAtUnlock))
+                          : '—'}
                       </span>
                     </div>
 
