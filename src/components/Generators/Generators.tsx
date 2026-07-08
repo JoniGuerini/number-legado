@@ -199,15 +199,15 @@ function highestUnlocked(gens: Gen[]): number {
   return max;
 }
 
-/** Faixa de 3 geradores: 1º prestígio no G3, 2º no G6, 3º no G9… */
-const PRESTIGE_GEN_STEP = 3;
+/** Faixa de 5 geradores: 1º prestígio no G5, 2º no G10, 3º no G15… */
+const PRESTIGE_GEN_STEP = 5;
 
 /** Gerador mínimo (1-based) pra prestigiar de novo, dado quantas vezes já prestigou. */
 function prestigeGateOf(prestigeCount: number): number {
   return PRESTIGE_GEN_STEP * (prestigeCount + 1);
 }
 
-/** Níveis ganhos ao prestigiar: floor(maiorGerador / 3) — G3–G5 → +1, G6–G8 → +2… */
+/** Níveis ganhos ao prestigiar: floor(maiorGerador / 5) — G5–G9 → +1, G10–G14 → +2… */
 function prestigeGainOf(gens: Gen[]): number {
   return Math.floor(highestUnlocked(gens) / PRESTIGE_GEN_STEP);
 }
