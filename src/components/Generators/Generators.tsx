@@ -542,7 +542,27 @@ export default function Generators() {
         </div>
       </div>
 
-      <div className={styles.listWrap}>
+      {/* Header + lista num bloco só, com o mesmo gap de 8px dos cards */}
+      <div className={styles.tableArea}>
+        {/* Card-header fixo acima da lista: títulos de todas as colunas (os
+            cards mostram só valores; no mobile os cards viram pilha vertical,
+            o header some e os rótulos voltam pra dentro de cada card) */}
+        <div className={`${styles.row} ${styles.headerRow}`}>
+          <span className={styles.headerCell}>{t('gen.colGen')}</span>
+          <span className={styles.headerCell}>{t('gen.owns')}</span>
+          <span className={styles.headerCell}>{t('gen.colProduces')}</span>
+          <span className={styles.headerCell}>{t('frag.next')}</span>
+          <div className={styles.actions}>
+            <span className={`${styles.headerCell} ${styles.headerBoost}`}>
+              {t('gen.colInvest')}
+            </span>
+            <span className={`${styles.headerCell} ${styles.headerBuy}`}>
+              {t('gen.colBuy')}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.listWrap}>
         {edges.above && (
           <button
             className={`${styles.fade} ${styles.fadeTop}`}
@@ -676,15 +696,16 @@ export default function Generators() {
           })}
         </div>
 
-        {edges.below && (
-          <button
-            className={`${styles.fade} ${styles.fadeBottom}`}
-            onClick={scrollToEnd}
-            aria-label={t('common.toEnd')}
-          >
-            ↓
-          </button>
-        )}
+          {edges.below && (
+            <button
+              className={`${styles.fade} ${styles.fadeBottom}`}
+              onClick={scrollToEnd}
+              aria-label={t('common.toEnd')}
+            >
+              ↓
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

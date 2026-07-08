@@ -1,7 +1,7 @@
 .bar {
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: 8px;
+  right: 8px;
   display: flex;
   gap: 8px;
 }
@@ -42,18 +42,12 @@
   color: var(--ink-muted);
 }
 
-/* Indicador de ambiente: vermelho = dev local, verde = produção */
-.envDev,
-.envProd {
+/* Indicador de ambiente: só existe em dev local */
+.envDev {
   font: 600 11px/1 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-.envDev {
   color: var(--accent);
-}
-.envProd {
-  color: var(--tier-startup);
 }
 
 .batteryLow {

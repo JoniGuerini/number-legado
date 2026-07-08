@@ -6,7 +6,7 @@ export const pt = {
   // Navegação principal (rodapé)
   'nav.geradores': 'Geradores',
   'nav.atividade': 'Atividade',
-  'nav.config': 'Config',
+  'nav.config': 'Configurações',
 
   // Compartilhado
   'common.exportCsv': 'Exportar CSV',
@@ -26,15 +26,20 @@ export const pt = {
 
   // Geradores
   'gen.autoToggle': 'Automático: {state}',
-  'gen.baseNumber': 'número base',
+  'gen.baseNumber': 'recurso base',
   'gen.owns': 'possui',
   'gen.produces': 'produz {target}',
+  // Header fixo da tabela de geradores
+  'gen.colGen': 'gerador',
+  'gen.colProduces': 'produz',
+  'gen.colInvest': 'investir',
+  'gen.colBuy': 'comprar',
 
   // Fragmentos (recurso paralelo por marcos de posse: 10, 100, 1000…)
   'frag.label': 'fragmentos',
   'frag.claimAria': 'Resgatar {n} fragmentos',
   'frag.next': 'próximo fragmento',
-  'frag.investBtn': '×2 · {cost}',
+  'frag.investBtn': '{cost}',
   'frag.investAria':
     'Investir {cost} fragmentos: dobra a produção do gerador {n}',
 
@@ -57,7 +62,6 @@ export const pt = {
   'activity.faster': 'mais rápido',
 
   // Cardzinhos de telemetria do topo
-  'fps.production': 'produção',
   'fps.max': 'máx',
   'fps.newVersion': 'Nova versão pendente',
 

@@ -22,14 +22,18 @@ export const en: Dict = {
   'mode.hintManual': 'You make every purchase yourself.',
 
   'gen.autoToggle': 'Auto: {state}',
-  'gen.baseNumber': 'base number',
+  'gen.baseNumber': 'base resource',
   'gen.owns': 'owns',
+  'gen.colGen': 'generator',
+  'gen.colProduces': 'produces',
+  'gen.colInvest': 'invest',
+  'gen.colBuy': 'buy',
   'gen.produces': 'produces {target}',
 
   'frag.label': 'fragments',
   'frag.claimAria': 'Claim {n} fragments',
   'frag.next': 'next fragment',
-  'frag.investBtn': '×2 · {cost}',
+  'frag.investBtn': '{cost}',
   'frag.investAria':
     'Invest {cost} fragments: doubles generator {n} production',
 
@@ -50,7 +54,6 @@ export const en: Dict = {
   'activity.slower': 'slower',
   'activity.faster': 'faster',
 
-  'fps.production': 'production',
   'fps.max': 'max',
   'fps.newVersion': 'New version pending',
 

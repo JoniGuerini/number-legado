@@ -22,14 +22,18 @@ export const es: Dict = {
   'mode.hintManual': 'Tú haces todas las compras manualmente.',
 
   'gen.autoToggle': 'Automático: {state}',
-  'gen.baseNumber': 'número base',
+  'gen.baseNumber': 'recurso base',
   'gen.owns': 'posee',
+  'gen.colGen': 'generador',
+  'gen.colProduces': 'produce',
+  'gen.colInvest': 'invertir',
+  'gen.colBuy': 'comprar',
   'gen.produces': 'produce {target}',
 
   'frag.label': 'fragmentos',
   'frag.claimAria': 'Reclamar {n} fragmentos',
   'frag.next': 'siguiente fragmento',
-  'frag.investBtn': '×2 · {cost}',
+  'frag.investBtn': '{cost}',
   'frag.investAria':
     'Invertir {cost} fragmentos: duplica la producción del generador {n}',
 
@@ -50,7 +54,6 @@ export const es: Dict = {
   'activity.slower': 'más lento',
   'activity.faster': 'más rápido',
 
-  'fps.production': 'producción',
   'fps.max': 'máx',
   'fps.newVersion': 'Nueva versión pendiente',
 

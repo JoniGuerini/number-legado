@@ -4,7 +4,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  /* Mesmo ritmo de 8px do resto do app */
+  gap: 8px;
 }
 
 /* Estado vazio com convite pra começar o jogo */

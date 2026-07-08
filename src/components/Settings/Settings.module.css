@@ -6,13 +6,14 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  /* Mesmo ritmo de 8px do resto do app */
+  gap: 8px;
 }
 
 /* Abas de navegação, dentro do card */
 .tabs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
   width: 100%;
 }
@@ -57,7 +58,7 @@
   padding-top: 4px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 8px;
 }
 .body::-webkit-scrollbar {
   display: none;
@@ -66,7 +67,7 @@
 /* Rodapé fixo do modal: restaurar configs ao padrão */
 .footer {
   flex-shrink: 0;
-  padding-top: 12px;
+  padding-top: 8px;
   border-top: 1px solid var(--surface-deep);
   display: flex;
   flex-direction: column;

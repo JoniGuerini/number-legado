@@ -5,7 +5,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 24px;
+  /* Mesmo respiro dos cards da lista: recursos, header e cards compartilham
+     a mesma distância de 8px */
+  gap: 8px;
 }
 
 /* ===== Tela de escolha de modo ===== */
@@ -79,10 +81,10 @@
 /* Hub de cardzinhos no canto superior esquerdo, lado a lado */
 .corner {
   position: fixed;
-  top: 12px;
-  /* Reserva o espaço do botão de tela cheia (fixo em left:12, ~32px de largura)
-     para os cardzinhos começarem logo depois dele, sem sobreposição */
-  left: 52px;
+  top: 8px;
+  /* Reserva o espaço do botão de tela cheia (fixo em left:8, 32px de largura)
+     + 8px de gap para os cardzinhos começarem logo depois, sem sobreposição */
+  left: 48px;
   display: flex;
   align-items: stretch;
   gap: 8px;
@@ -157,6 +159,46 @@
   letter-spacing: 0.04em;
   color: var(--ink-soft);
   white-space: nowrap;
+}
+
+/* Header + lista agrupados: o espaçamento entre o card-header e o primeiro
+   card é o mesmo 8px usado entre os cards da lista */
+.tableArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Card-header fixo: mesmos grid/larguras dos cards (compõe .row), só que
+   mais baixo e apenas com os títulos das colunas */
+.headerRow {
+  padding: 10px 18px;
+}
+
+.headerCell {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* Mais forte que o --ink-faint dos rótulos internos: no header os títulos
+     são a única informação do card e precisam de contraste legível */
+  color: var(--ink-muted);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* 1ª coluna (gerador) alinhada à esquerda como o número nos cards */
+.headerRow > .headerCell:first-child {
+  text-align: left;
+}
+
+/* Títulos dos botões: mesma largura dos botões pra alinhar certinho */
+.headerBoost {
+  width: 110px;
+}
+.headerBuy {
+  width: 120px;
 }
 
 .listWrap {
@@ -318,6 +360,9 @@
 }
 
 .statLabel {
+  /* No desktop os títulos vivem no card-header fixo; o rótulo volta a
+     aparecer no mobile, onde os cards viram pilha e o header some */
+  display: none;
   font: 500 10px var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -388,7 +433,7 @@
   }
 
   .wrap {
-    gap: 14px;
+    gap: 8px;
   }
 
   /* Card do gerador vertical: número no topo, stats empilhados
@@ -399,6 +444,13 @@
     align-items: stretch;
     gap: 12px;
     padding: 14px 16px;
+  }
+  /* Sem header no mobile: os rótulos voltam pra dentro dos cards */
+  .headerRow {
+    display: none;
+  }
+  .statLabel {
+    display: initial;
   }
   .genName {
     font-size: 18px;
