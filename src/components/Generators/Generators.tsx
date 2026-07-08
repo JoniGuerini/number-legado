@@ -600,7 +600,7 @@ export default function Generators({
         <div className={styles.resourceCard}>
           <span className={styles.resourceLabel}>{t('frag.label')}</span>
           <div className={styles.resourceRow}>
-            <span className={styles.resourceValue}>{game.fragments}</span>
+            <span className={styles.resourceValue}>{fmt(game.fragments)}</span>
           </div>
         </div>
       </div>
@@ -725,9 +725,9 @@ export default function Generators({
                       <button
                         className={styles.fragClaim}
                         onClick={() => claim(i)}
-                        aria-label={t('frag.claimAria', { n: pending })}
+                        aria-label={t('frag.claimAria', { n: fmt(pending) })}
                       >
-                        +{pending}
+                        +{fmt(pending)}
                       </button>
                     )}
                   </span>
