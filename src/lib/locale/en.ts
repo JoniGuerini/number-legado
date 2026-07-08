@@ -35,6 +35,8 @@ export const en: Dict = {
   'frag.label': 'fragments',
   'frag.claimAria': 'Claim {n} fragments',
   'frag.next': 'next fragment',
+  'frag.claimAll': 'claim all',
+  'frag.claimAllAria': 'Claim pending fragments from every generator',
   'frag.investBtn': '{cost}',
   'frag.investAria':
     'Invest {cost} fragments: doubles generator {n} production',

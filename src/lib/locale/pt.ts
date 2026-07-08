@@ -42,6 +42,8 @@ export const pt = {
   'frag.label': 'fragmentos',
   'frag.claimAria': 'Resgatar {n} fragmentos',
   'frag.next': 'próximo fragmento',
+  'frag.claimAll': 'resgatar tudo',
+  'frag.claimAllAria': 'Resgatar os fragmentos pendentes de todos os geradores',
   'frag.investBtn': '{cost}',
   'frag.investAria':
     'Investir {cost} fragmentos: dobra a produção do gerador {n}',

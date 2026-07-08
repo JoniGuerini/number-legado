@@ -161,9 +161,11 @@ function pendingFragmentsOf(gen: Gen): number {
   );
 }
 
-/** Custo (em fragmentos) do próximo nível de investimento: 1, 2, 4, 8… */
-function boostCostOf(boost: number): number {
-  return 2 ** boost;
+/** Custo (em fragmentos) do próximo nível de investimento. Cada gerador tem
+    a sua base — o gerador i começa custando o dobro do anterior (1, 2, 4…) —
+    e cada nível comprado dobra o próximo: 2^(i + nível). */
+function boostCostOf(i: number, boost: number): number {
+  return 2 ** (i + boost);
 }
 
 /** Multiplicador de produção do gerador: ×2 por nível investido. */
@@ -425,11 +427,26 @@ export default function Generators({
     });
   };
 
+  // Resgata os pendentes de todos os geradores num clique só
+  const claimAll = () => {
+    setGame((g) => {
+      let total = 0;
+      const gens = g.gens.map((x) => {
+        const pending = pendingFragmentsOf(x);
+        if (pending <= 0) return x;
+        total += pending;
+        return { ...x, claimed: milestonesOf(x.amount) };
+      });
+      if (total <= 0) return g;
+      return { ...g, fragments: g.fragments + total, gens };
+    });
+  };
+
   // Investe fragmentos no gerador i: um nível dobra a produção dele e o
-  // próximo nível passa a custar o dobro (1, 2, 4, 8…).
+  // próximo nível passa a custar o dobro.
   const buyBoost = (i: number) => {
     setGame((g) => {
-      const cost = boostCostOf(g.gens[i].boost);
+      const cost = boostCostOf(i, g.gens[i].boost);
       if (g.fragments < cost) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
@@ -615,7 +632,19 @@ export default function Generators({
           <span className={styles.headerCell}>{t('gen.owns')}</span>
           <span className={styles.headerCell}>{t('gen.colProduces')}</span>
           <span className={styles.headerCell}>{t('gen.colLevel')}</span>
-          <span className={styles.headerCell}>{t('frag.next')}</span>
+          <span className={styles.headerCell}>
+            {t('frag.next')}
+            {/* Com 2+ geradores com pendência, atalho pra resgatar tudo */}
+            {game.gens.filter((x) => pendingFragmentsOf(x) > 0).length >= 2 && (
+              <button
+                className={styles.claimAll}
+                onClick={claimAll}
+                aria-label={t('frag.claimAllAria')}
+              >
+                {t('frag.claimAll')}
+              </button>
+            )}
+          </span>
           <div className={styles.actions}>
             <span className={`${styles.headerCell} ${styles.headerBoost}`}>
               {t('gen.colInvest')}
@@ -744,14 +773,14 @@ export default function Generators({
                 <div className={styles.actionsTray}>
                   <button
                     className={`btn-secondary ${styles.boostBtn}`}
-                    disabled={game.fragments < boostCostOf(gen.boost)}
+                    disabled={game.fragments < boostCostOf(i, gen.boost)}
                     {...holdProps(() => buyBoost(i))}
                     aria-label={t('frag.investAria', {
                       n: i + 1,
-                      cost: boostCostOf(gen.boost),
+                      cost: boostCostOf(i, gen.boost),
                     })}
                   >
-                    {t('frag.investBtn', { cost: fmt(boostCostOf(gen.boost)) })}
+                    {t('frag.investBtn', { cost: fmt(boostCostOf(i, gen.boost)) })}
                   </button>
                 </div>
 

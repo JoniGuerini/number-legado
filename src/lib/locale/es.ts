@@ -35,6 +35,8 @@ export const es: Dict = {
   'frag.label': 'fragmentos',
   'frag.claimAria': 'Reclamar {n} fragmentos',
   'frag.next': 'siguiente fragmento',
+  'frag.claimAll': 'reclamar todo',
+  'frag.claimAllAria': 'Reclamar los fragmentos pendientes de todos los generadores',
   'frag.investBtn': '{cost}',
   'frag.investAria':
     'Invertir {cost} fragmentos: duplica la producción del generador {n}',

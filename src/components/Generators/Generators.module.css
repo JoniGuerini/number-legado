@@ -381,6 +381,25 @@
   color: var(--brass-bright);
 }
 
+/* Resgatar tudo: atalho textual no header, ao lado do título da coluna */
+.row button.claimAll {
+  width: auto;
+  padding: 0;
+  margin-left: 8px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  font: 600 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.row button.claimAll:hover {
+  color: var(--brass-bright);
+}
+
 .row button {
   width: 120px;
   padding: 10px 0;
