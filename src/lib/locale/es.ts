@@ -26,6 +26,13 @@ export const es: Dict = {
   'gen.owns': 'posee',
   'gen.produces': 'produce {target}',
 
+  'frag.label': 'fragmentos',
+  'frag.claimAria': 'Reclamar {n} fragmentos',
+  'frag.next': 'siguiente fragmento',
+  'frag.investBtn': '×2 · {cost}',
+  'frag.investAria':
+    'Invertir {cost} fragmentos: duplica la producción del generador {n}',
+
   'activity.empty': 'Ningún desbloqueo registrado en el modo {game} todavía.',
   'activity.cta': 'Empezar a jugar {game}',
   'activity.unlocked': 'generadores desbloqueados',

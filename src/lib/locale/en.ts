@@ -26,6 +26,13 @@ export const en: Dict = {
   'gen.owns': 'owns',
   'gen.produces': 'produces {target}',
 
+  'frag.label': 'fragments',
+  'frag.claimAria': 'Claim {n} fragments',
+  'frag.next': 'next fragment',
+  'frag.investBtn': '×2 · {cost}',
+  'frag.investAria':
+    'Invest {cost} fragments: doubles generator {n} production',
+
   'activity.empty': 'No unlocks recorded in {game} mode yet.',
   'activity.cta': 'Start playing {game}',
   'activity.unlocked': 'generators unlocked',

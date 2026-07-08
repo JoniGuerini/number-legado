@@ -30,6 +30,14 @@ export const pt = {
   'gen.owns': 'possui',
   'gen.produces': 'produz {target}',
 
+  // Fragmentos (recurso paralelo por marcos de posse: 10, 100, 1000…)
+  'frag.label': 'fragmentos',
+  'frag.claimAria': 'Resgatar {n} fragmentos',
+  'frag.next': 'próximo fragmento',
+  'frag.investBtn': '×2 · {cost}',
+  'frag.investAria':
+    'Investir {cost} fragmentos: dobra a produção do gerador {n}',
+
   // Atividade (log de desbloqueios)
   'activity.empty': 'Nenhum desbloqueio registrado no modo {game} ainda.',
   'activity.cta': 'Começar a jogar {game}',

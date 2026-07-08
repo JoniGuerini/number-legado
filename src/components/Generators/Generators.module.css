@@ -8,10 +8,6 @@
   gap: 24px;
 }
 
-.baseBlock {
-  align-self: center;
-}
-
 /* ===== Tela de escolha de modo ===== */
 .modeScreen {
   min-height: 60vh;
@@ -116,31 +112,51 @@
   color: var(--brass-deep);
 }
 
-.baseBlock {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+/* Display dos recursos: dois cards compactos dividindo a largura, rótulo em
+   cima e valor + taxa na mesma linha (layout portado do Number-test) */
+.resources {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.baseLabel {
-  font: 500 12px var(--mono);
-  letter-spacing: 0.08em;
+.resourceCard {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--card-edge);
+}
+
+.resourceLabel {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-muted);
 }
 
-.baseValue {
-  font: 600 48px/1 var(--mono);
+.resourceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.resourceValue {
+  font: 600 22px/1 var(--mono);
   color: var(--brass-deep);
   font-variant-numeric: tabular-nums;
 }
 
-.baseRate {
-  font: 500 13px var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
+.resourceRate {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  white-space: nowrap;
 }
 
 .listWrap {
@@ -204,8 +220,9 @@
   overflow: hidden;
   display: grid;
   /* Colunas de largura fixa + space-between = mesma distância entre todas
-     (o log de desbloqueios vive na aba Atividade) */
-  grid-template-columns: 60px 180px 200px 120px;
+     (o log de desbloqueios vive na aba Atividade); a última é o par de
+     botões investir + comprar, colados um no outro */
+  grid-template-columns: 90px 160px 180px 140px auto;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
@@ -315,6 +332,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Fragmentos pendentes: só o número ao lado da %, sem cara de botão.
+   O seletor composto vence os estilos genéricos de `.row button`. */
+.row button.fragClaim {
+  width: auto;
+  padding: 0;
+  margin-left: 8px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  font: 600 14px var(--mono);
+  color: var(--brass-deep);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.row button.fragClaim:hover {
+  color: var(--brass-bright);
+}
+
 .row button {
   width: 120px;
   padding: 10px 0;
@@ -324,6 +360,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+}
+
+/* Par de botões investir + comprar, lado a lado na ponta direita da linha */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Investir fragmentos: mesmo porte do botão de comprar, tom secundário
+   (btn-secondary) pra diferenciar do custo em número base */
+.row button.boostBtn {
+  width: 110px;
 }
 
 /* ===== Mobile ===== */
@@ -340,10 +389,6 @@
 
   .wrap {
     gap: 14px;
-  }
-
-  .baseValue {
-    font-size: 40px;
   }
 
   /* Card do gerador vertical: número no topo, stats empilhados

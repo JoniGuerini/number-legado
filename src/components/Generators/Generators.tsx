@@ -15,6 +15,10 @@ interface Gen {
   unlockedAt?: number;
   /** Quantidade do tier anterior no momento do desbloqueio (log da Atividade). */
   prevAtUnlock?: Decimal;
+  /** Marcos de posse (10, 100, 1000…) já resgatados em fragmentos. */
+  claimed: number;
+  /** Níveis de investimento em fragmentos — cada um dobra a produção. */
+  boost: number;
 }
 
 type Mode = 'manual' | 'auto';
@@ -23,6 +27,8 @@ interface Game {
   base: Decimal;
   /** Total de base já produzido na vida do save (compras não descontam). */
   totalProduced: Decimal;
+  /** Recurso paralelo: 1 por marco de posse resgatado nos geradores. */
+  fragments: number;
   gens: Gen[];
   mode: Mode;
   /** false = ainda na tela de escolha de modo. */
@@ -38,11 +44,14 @@ interface Game {
 interface GenSave {
   base: string;
   totalProduced?: string;
+  fragments?: number;
   gens: {
     amount: string;
     bought: number;
     unlockedAt?: number;
     prevAtUnlock?: string;
+    claimed?: number;
+    boost?: number;
   }[];
   uptime: number;
   mode?: Mode;
@@ -58,7 +67,12 @@ const START_BASE = new Decimal(1);
 /** Cada unidade de um gerador produz 0.1 do nível anterior por segundo. */
 const PROD_PER_UNIT = new Decimal(0.1);
 
-const newGen = (): Gen => ({ amount: new Decimal(0), bought: 0 });
+const newGen = (): Gen => ({
+  amount: new Decimal(0),
+  bought: 0,
+  claimed: 0,
+  boost: 0,
+});
 
 function loadGame(saveKey: string): Game {
   const s = loadSave<GenSave>(saveKey);
@@ -66,6 +80,7 @@ function loadGame(saveKey: string): Game {
     return {
       base: START_BASE,
       totalProduced: new Decimal(0),
+      fragments: 0,
       gens: [newGen()],
       mode: 'manual',
       started: false,
@@ -89,12 +104,16 @@ function loadGame(saveKey: string): Game {
     base: new Decimal(s.base),
     // Saves antigos não registravam: usa o saldo atual como piso.
     totalProduced: new Decimal(s.totalProduced ?? s.base),
+    fragments: s.fragments ?? 0,
+    // claimed default 0: marcos antigos ficam pendentes (recompensa retroativa)
     gens: s.gens.map((g) => ({
       amount: new Decimal(g.amount),
       bought: g.bought,
       unlockedAt: g.unlockedAt,
       prevAtUnlock:
         g.prevAtUnlock !== undefined ? new Decimal(g.prevAtUnlock) : undefined,
+      claimed: g.claimed ?? 0,
+      boost: g.boost ?? 0,
     })),
     mode: s.mode ?? 'manual',
     started,
@@ -118,17 +137,38 @@ function costOf(i: number, bought: number): Decimal {
   );
 }
 
+/** Marcos de posse alcançados por um gerador: 1 ao possuir 10, 2 aos 100,
+    3 aos 1.000… (floor do log10; o epsilon segura resíduo de ponto flutuante
+    quando a quantidade encosta na potência exata). */
+function milestonesOf(amount: Decimal): number {
+  if (amount.lt(10)) return 0;
+  return amount.mul(1 + 1e-9).log10().floor().toNumber();
+}
+
+/** Custo (em fragmentos) do próximo nível de investimento: 1, 2, 4, 8… */
+function boostCostOf(boost: number): number {
+  return 2 ** boost;
+}
+
+/** Multiplicador de produção do gerador: ×2 por nível investido. */
+function boostMultOf(boost: number): Decimal {
+  return Decimal.pow(2, boost);
+}
+
 /** Base prevista após t segundos, assumindo nenhuma compra nova. A cascata
     sem compras é um sistema linear nilpotente com solução fechada:
-    base(t) = base + Σ_j a_j · (0.1t)^(j+1) / (j+1)!
-    (cada termo é a contribuição do gerador j descendo j+1 níveis). */
+    base(t) = base + Σ_j a_j · Π_{k≤j} m_k · (0.1t)^(j+1) / (j+1)!
+    (cada termo é a contribuição do gerador j descendo j+1 níveis; m_k é o
+    multiplicador de investimento de cada nível atravessado no caminho). */
 function baseAt(game: Game, t: number): Decimal {
   const x = new Decimal(t).mul(PROD_PER_UNIT); // 0.1t
   let value = game.base;
   let factor = x; // (0.1t)^(j+1) / (j+1)! — começa em j=0
+  let mults = new Decimal(1); // Π m_k dos níveis j, j-1… 0
   for (let j = 0; j < game.gens.length; j++) {
+    mults = mults.mul(boostMultOf(game.gens[j].boost));
     const amount = game.gens[j].amount;
-    if (amount.gt(0)) value = value.add(amount.mul(factor));
+    if (amount.gt(0)) value = value.add(amount.mul(mults).mul(factor));
     factor = factor.mul(x).div(j + 2);
   }
   return value;
@@ -174,14 +214,18 @@ function advance(g: Game, nSteps: number): Game {
   let totalProduced = g.totalProduced;
   let uptime = g.uptime;
 
+  // Produção por passo de cada gerador (0.1×0.25s × 2^boost) — os níveis de
+  // investimento não mudam durante o advance, então dá pra pré-calcular.
+  const prodStep = gens.map((x) => PROD_PER_STEP.mul(boostMultOf(x.boost)));
+
   for (let s = 0; s < nSteps; s++) {
     if (gens[0].bought > 0) uptime += SIM_STEP_S;
 
-    // Cada unidade do gerador N produz 0.1 do gerador N-1 por segundo.
+    // Cada unidade do gerador N produz 0.1 (×2 por investimento) do N-1 por s.
     for (let i = gens.length - 1; i >= 1; i--) {
-      gens[i - 1].amount = gens[i - 1].amount.add(gens[i].amount.mul(PROD_PER_STEP));
+      gens[i - 1].amount = gens[i - 1].amount.add(gens[i].amount.mul(prodStep[i]));
     }
-    const income = gens[0].amount.mul(PROD_PER_STEP);
+    const income = gens[0].amount.mul(prodStep[0]);
     base = base.add(income);
     totalProduced = totalProduced.add(income);
 
@@ -202,7 +246,10 @@ function advance(g: Game, nSteps: number): Game {
         if (wasLocked) {
           gens[i].unlockedAt = uptime;
           if (i > 0) gens[i].prevAtUnlock = gens[i - 1].amount;
-          if (i === last) gens.push(newGen());
+          if (i === last) {
+            gens.push(newGen());
+            prodStep.push(PROD_PER_STEP); // boost 0 no gerador recém-criado
+          }
         }
         break;
       }
@@ -277,11 +324,14 @@ export default function Generators() {
       writeSave(saveKey, {
         base: g.base.toString(),
         totalProduced: g.totalProduced.toString(),
+        fragments: g.fragments,
         gens: g.gens.map((x) => ({
           amount: x.amount.toString(),
           bought: x.bought,
           unlockedAt: x.unlockedAt,
           prevAtUnlock: x.prevAtUnlock?.toString(),
+          claimed: x.claimed,
+          boost: x.boost,
         })),
         uptime: g.uptime,
         mode: g.mode,
@@ -340,6 +390,32 @@ export default function Generators() {
     });
   };
 
+  // Resgata de uma vez todos os fragmentos pendentes do gerador i
+  // (marcos de posse alcançados menos os já resgatados).
+  const claim = (i: number) => {
+    setGame((g) => {
+      const pending = milestonesOf(g.gens[i].amount) - g.gens[i].claimed;
+      if (pending <= 0) return g;
+
+      const gens = g.gens.map((x) => ({ ...x }));
+      gens[i].claimed += pending;
+      return { ...g, fragments: g.fragments + pending, gens };
+    });
+  };
+
+  // Investe fragmentos no gerador i: um nível dobra a produção dele e o
+  // próximo nível passa a custar o dobro (1, 2, 4, 8…).
+  const buyBoost = (i: number) => {
+    setGame((g) => {
+      const cost = boostCostOf(g.gens[i].boost);
+      if (g.fragments < cost) return g;
+
+      const gens = g.gens.map((x) => ({ ...x }));
+      gens[i].boost += 1;
+      return { ...g, fragments: g.fragments - cost, gens };
+    });
+  };
+
   const isAuto = game.mode === 'auto';
 
   // ===== Extrapolação visual entre passos fixos =====
@@ -353,19 +429,23 @@ export default function Generators() {
         )
       : 0;
 
+  /** Taxa de produção por unidade do gerador i (0.1/s × 2^investimentos). */
+  const unitRate = (i: number): Decimal =>
+    PROD_PER_UNIT.mul(boostMultOf(game.gens[i].boost));
+
   /** Quantidade exibida do gerador i: real + o que o gerador i+1 produziu
       desde o último passo. */
   const dispAmount = (i: number): Decimal => {
     const gen = game.gens[i];
     const feeder = game.gens[i + 1];
     if (!feeder || partial === 0) return gen.amount;
-    return gen.amount.add(feeder.amount.mul(PROD_PER_UNIT).mul(partial));
+    return gen.amount.add(feeder.amount.mul(unitRate(i + 1)).mul(partial));
   };
 
   const partialIncome =
     partial === 0
       ? new Decimal(0)
-      : game.gens[0].amount.mul(PROD_PER_UNIT).mul(partial);
+      : game.gens[0].amount.mul(unitRate(0)).mul(partial);
   const dispBase = game.base.add(partialIncome);
 
   // ===== Timer de desbloqueio =====
@@ -378,7 +458,8 @@ export default function Generators() {
   }>({ signature: '', etas: new Map() });
 
   const unlockEtaAt = (i: number, cost: Decimal): number | null => {
-    const signature = game.gens.map((g) => g.bought).join(',');
+    // Compras e investimentos mudam a curva de produção → invalidam o cache
+    const signature = game.gens.map((g) => `${g.bought}:${g.boost}`).join(',');
     const cache = etaCacheRef.current;
     if (cache.signature !== signature) {
       cache.signature = signature;
@@ -443,12 +524,22 @@ export default function Generators() {
         </button>
       </div>
 
-      <div className={styles.baseBlock}>
-        <span className={styles.baseLabel}>{t('gen.baseNumber')}</span>
-        <span className={styles.baseValue}>{fmt(dispBase)}</span>
-        <span className={styles.baseRate}>
-          +{fmtRate(dispAmount(0).mul(PROD_PER_UNIT))} / s
-        </span>
+      <div className={styles.resources}>
+        <div className={styles.resourceCard}>
+          <span className={styles.resourceLabel}>{t('gen.baseNumber')}</span>
+          <div className={styles.resourceRow}>
+            <span className={styles.resourceValue}>{fmt(dispBase)}</span>
+            <span className={styles.resourceRate}>
+              +{fmtRate(dispAmount(0).mul(unitRate(0)))} / s
+            </span>
+          </div>
+        </div>
+        <div className={styles.resourceCard}>
+          <span className={styles.resourceLabel}>{t('frag.label')}</span>
+          <div className={styles.resourceRow}>
+            <span className={styles.resourceValue}>{game.fragments}</span>
+          </div>
+        </div>
       </div>
 
       <div className={styles.listWrap}>
@@ -512,6 +603,16 @@ export default function Generators() {
             );
           }
 
+          // Fragmentos pendentes: marcos de posse alcançados menos resgatados.
+          // Sem pendência, o chip vira medidor de progresso até o próximo marco
+          // (próxima potência de 10 de posse) — mesmo tamanho, altura uniforme.
+          const pending = milestonesOf(gen.amount) - gen.claimed;
+          const nextMilestone = Decimal.pow(10, milestonesOf(gen.amount) + 1);
+          const fragPct = Math.min(
+            dispAmount(i).div(nextMilestone).toNumber() * 100,
+            100
+          );
+
           return (
             <div key={i} className={styles.row} ref={virtual.measureRef}>
               <span className={styles.genName}>{i + 1}</span>
@@ -527,18 +628,49 @@ export default function Generators() {
                     {t('gen.produces', { target })}
                   </span>
                   <span className={styles.statValue}>
-                    +{fmtRate(dispAmount(i).mul(PROD_PER_UNIT))} / s
+                    +{fmtRate(dispAmount(i).mul(unitRate(i)))} / s
+                  </span>
+                </div>
+
+                <div className={styles.stat}>
+                  <span className={styles.statLabel}>{t('frag.next')}</span>
+                  <span className={styles.statValue}>
+                    {fragPct.toFixed(2)}%
+                    {/* Pendentes: só o número, clicável, resgata tudo */}
+                    {pending > 0 && (
+                      <button
+                        className={styles.fragClaim}
+                        onClick={() => claim(i)}
+                        aria-label={t('frag.claimAria', { n: pending })}
+                      >
+                        +{pending}
+                      </button>
+                    )}
                   </span>
                 </div>
               </div>
 
-              <button
-                className="btn-primary"
-                disabled={isAuto || game.base.lt(cost)}
-                onClick={() => buy(i)}
-              >
-                {fmtCost(cost)}
-              </button>
+              <div className={styles.actions}>
+                <button
+                  className={`btn-secondary ${styles.boostBtn}`}
+                  disabled={game.fragments < boostCostOf(gen.boost)}
+                  onClick={() => buyBoost(i)}
+                  aria-label={t('frag.investAria', {
+                    n: i + 1,
+                    cost: boostCostOf(gen.boost),
+                  })}
+                >
+                  {t('frag.investBtn', { cost: fmt(boostCostOf(gen.boost)) })}
+                </button>
+
+                <button
+                  className="btn-primary"
+                  disabled={isAuto || game.base.lt(cost)}
+                  onClick={() => buy(i)}
+                >
+                  {fmtCost(cost)}
+                </button>
+              </div>
             </div>
           );
           })}
