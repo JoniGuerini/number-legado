@@ -145,6 +145,21 @@ function milestonesOf(amount: Decimal): number {
   return amount.mul(1 + 1e-9).log10().floor().toNumber();
 }
 
+/** Fragmentos acumulados pelos n primeiros marcos de um gerador. Cada marco
+    concede o dobro do anterior (1, 2, 4, 8…), então a soma fecha em 2^n − 1. */
+function fragmentsForMilestones(n: number): number {
+  return 2 ** n - 1;
+}
+
+/** Fragmentos pendentes de resgate: o que os marcos alcançados renderam
+    menos o que os marcos já resgatados renderam. */
+function pendingFragmentsOf(gen: Gen): number {
+  return (
+    fragmentsForMilestones(milestonesOf(gen.amount)) -
+    fragmentsForMilestones(gen.claimed)
+  );
+}
+
 /** Custo (em fragmentos) do próximo nível de investimento: 1, 2, 4, 8… */
 function boostCostOf(boost: number): number {
   return 2 ** boost;
@@ -391,14 +406,14 @@ export default function Generators() {
   };
 
   // Resgata de uma vez todos os fragmentos pendentes do gerador i
-  // (marcos de posse alcançados menos os já resgatados).
+  // (o rendimento dos marcos alcançados menos o dos já resgatados).
   const claim = (i: number) => {
     setGame((g) => {
-      const pending = milestonesOf(g.gens[i].amount) - g.gens[i].claimed;
+      const pending = pendingFragmentsOf(g.gens[i]);
       if (pending <= 0) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
-      gens[i].claimed += pending;
+      gens[i].claimed = milestonesOf(gens[i].amount);
       return { ...g, fragments: g.fragments + pending, gens };
     });
   };
@@ -633,7 +648,7 @@ export default function Generators() {
             const etaAt = progress >= 1 ? null : unlockEtaAt(i, cost);
             const etaText =
               progress >= 1
-                ? fmtTime(0)
+                ? t('gen.unlockReady')
                 : etaAt === null
                   ? '—'
                   : fmtTime(Math.max((etaAt - Date.now()) / 1000, 0));
@@ -660,10 +675,11 @@ export default function Generators() {
             );
           }
 
-          // Fragmentos pendentes: marcos de posse alcançados menos resgatados.
+          // Fragmentos pendentes: rendimento dos marcos alcançados menos o dos
+          // já resgatados (cada marco vale o dobro do anterior: 1, 2, 4, 8…).
           // Sem pendência, o chip vira medidor de progresso até o próximo marco
           // (próxima potência de 10 de posse) — mesmo tamanho, altura uniforme.
-          const pending = milestonesOf(gen.amount) - gen.claimed;
+          const pending = pendingFragmentsOf(gen);
           const nextMilestone = Decimal.pow(10, milestonesOf(gen.amount) + 1);
           const fragPct = Math.min(
             dispAmount(i).div(nextMilestone).toNumber() * 100,

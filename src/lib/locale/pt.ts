@@ -34,6 +34,8 @@ export const pt = {
   'gen.colProduces': 'produz',
   'gen.colInvest': 'investir',
   'gen.colBuy': 'comprar',
+  // Timer do botão de desbloqueio quando o custo já foi atingido
+  'gen.unlockReady': 'Pronto',
 
   // Fragmentos (recurso paralelo por marcos de posse: 10, 100, 1000…)
   'frag.label': 'fragmentos',

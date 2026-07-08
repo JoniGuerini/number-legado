@@ -28,6 +28,7 @@ export const en: Dict = {
   'gen.colProduces': 'produces',
   'gen.colInvest': 'invest',
   'gen.colBuy': 'buy',
+  'gen.unlockReady': 'Ready',
   'gen.produces': 'produces {target}',
 
   'frag.label': 'fragments',
