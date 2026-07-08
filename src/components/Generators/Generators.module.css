@@ -107,6 +107,39 @@
   color: var(--brass-deep);
 }
 
+/* Badge permanente de prestígio (só leitura) na fileira do topo */
+.prestigePill {
+  color: var(--brass-deep);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Botão de prestígio elegível — destaque brass */
+.prestigeBtn {
+  color: var(--brass-deep);
+}
+.prestigeBtn:hover {
+  background: var(--surface-deep);
+  color: var(--brass-bright);
+}
+
+/* Confirmar prestígio: tom de ação destrutiva (sacrifica a run) */
+.prestigeConfirm {
+  color: var(--accent);
+}
+.prestigeConfirm:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* Badge na tela de modo pós-prestígio */
+.prestigeBadge {
+  font: 600 12px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+
 /* Display dos recursos: dois cards compactos dividindo a largura, rótulo em
    cima e valor + taxa na mesma linha (layout portado do Number-test) */
 .resources {

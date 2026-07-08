@@ -48,6 +48,12 @@ export const pt = {
   'frag.investAria':
     'Investir {cost} fragmentos: dobra a produção do gerador {n}',
 
+  // Prestígio (reset da run → produção permanente ×2 por nível)
+  'prestige.mult': '×{mult}',
+  'prestige.preview': 'Prestígio +{gain} → ×{mult}',
+  'prestige.confirm': 'Confirmar +{gain} → ×{mult}',
+  'prestige.cancel': 'Cancelar',
+
   // Atividade (log de desbloqueios)
   'activity.empty': 'Nenhum desbloqueio registrado no modo {game} ainda.',
   'activity.cta': 'Começar a jogar {game}',

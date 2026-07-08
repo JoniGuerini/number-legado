@@ -41,6 +41,11 @@ export const es: Dict = {
   'frag.investAria':
     'Invertir {cost} fragmentos: duplica la producción del generador {n}',
 
+  'prestige.mult': '×{mult}',
+  'prestige.preview': 'Prestigio +{gain} → ×{mult}',
+  'prestige.confirm': 'Confirmar +{gain} → ×{mult}',
+  'prestige.cancel': 'Cancelar',
+
   'activity.empty': 'Ningún desbloqueo registrado en el modo {game} todavía.',
   'activity.cta': 'Empezar a jugar {game}',
   'activity.unlocked': 'generadores desbloqueados',

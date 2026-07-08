@@ -40,6 +40,10 @@ interface Game {
   steps: number;
   /** Tempo de jogo em segundos (conta a partir da 1ª compra do Gerador 1). */
   uptime: number;
+  /** Níveis permanentes de prestígio — cada um dobra a produção global. */
+  prestigeLevels: number;
+  /** Quantas vezes o jogador já prestigou — sobe o gerador mínimo da próxima. */
+  prestigeCount: number;
 }
 
 interface GenSave {
@@ -59,6 +63,8 @@ interface GenSave {
   started?: boolean;
   startedAt?: number;
   steps?: number;
+  prestigeLevels?: number;
+  prestigeCount?: number;
   /** Date.now() do momento do save (informativo/migração de saves antigos). */
   savedAt?: number;
 }
@@ -87,6 +93,8 @@ function loadGame(saveKey: string): Game {
       started: false,
       steps: 0,
       uptime: 0,
+      prestigeLevels: 0,
+      prestigeCount: 0,
     };
   }
 
@@ -121,6 +129,10 @@ function loadGame(saveKey: string): Game {
     startedAt,
     steps,
     uptime: s.uptime,
+    prestigeLevels: s.prestigeLevels ?? 0,
+    // Saves that prestiged before prestigeCount existed: assume at least 1
+    // so they cannot re-prestige at the old G3 gate.
+    prestigeCount: s.prestigeCount ?? ((s.prestigeLevels ?? 0) > 0 ? 1 : 0),
   };
   // O tempo fechado/oculto é recuperado pelo próprio loop: o alvo de passos
   // vem do relógio de parede, então o jogo corre atrás sozinho ao carregar.
@@ -173,15 +185,44 @@ function boostMultOf(boost: number): Decimal {
   return Decimal.pow(2, boost);
 }
 
+/** Multiplicador global permanente: ×2 por nível de prestígio. */
+function prestigeMultOf(levels: number): Decimal {
+  return Decimal.pow(2, levels);
+}
+
+/** Maior gerador com pelo menos 1 unidade comprada (1-based); 0 se nenhum. */
+function highestUnlocked(gens: Gen[]): number {
+  let max = 0;
+  for (let i = 0; i < gens.length; i++) {
+    if (gens[i].bought > 0) max = i + 1;
+  }
+  return max;
+}
+
+/** Faixa de 3 geradores: 1º prestígio no G3, 2º no G6, 3º no G9… */
+const PRESTIGE_GEN_STEP = 3;
+
+/** Gerador mínimo (1-based) pra prestigiar de novo, dado quantas vezes já prestigou. */
+function prestigeGateOf(prestigeCount: number): number {
+  return PRESTIGE_GEN_STEP * (prestigeCount + 1);
+}
+
+/** Níveis ganhos ao prestigiar: floor(maiorGerador / 3) — G3–G5 → +1, G6–G8 → +2… */
+function prestigeGainOf(gens: Gen[]): number {
+  return Math.floor(highestUnlocked(gens) / PRESTIGE_GEN_STEP);
+}
+
 /** Base prevista após t segundos, assumindo nenhuma compra nova. A cascata
     sem compras é um sistema linear nilpotente com solução fechada:
     base(t) = base + Σ_j a_j · Π_{k≤j} m_k · (0.1t)^(j+1) / (j+1)!
     (cada termo é a contribuição do gerador j descendo j+1 níveis; m_k é o
-    multiplicador de investimento de cada nível atravessado no caminho). */
+    multiplicador de investimento de cada nível atravessado no caminho).
+    O prestígio multiplica a produção de cada elo da cascata. */
 function baseAt(game: Game, t: number): Decimal {
-  const x = new Decimal(t).mul(PROD_PER_UNIT); // 0.1t
+  const prestige = prestigeMultOf(game.prestigeLevels);
+  const x = new Decimal(t).mul(PROD_PER_UNIT).mul(prestige); // 0.1t × prestígio
   let value = game.base;
-  let factor = x; // (0.1t)^(j+1) / (j+1)! — começa em j=0
+  let factor = x; // (0.1t·P)^(j+1) / (j+1)! — começa em j=0
   let mults = new Decimal(1); // Π m_k dos níveis j, j-1… 0
   for (let j = 0; j < game.gens.length; j++) {
     mults = mults.mul(boostMultOf(game.gens[j].boost));
@@ -232,14 +273,18 @@ function advance(g: Game, nSteps: number): Game {
   let totalProduced = g.totalProduced;
   let uptime = g.uptime;
 
-  // Produção por passo de cada gerador (0.1×0.25s × 2^boost) — os níveis de
-  // investimento não mudam durante o advance, então dá pra pré-calcular.
-  const prodStep = gens.map((x) => PROD_PER_STEP.mul(boostMultOf(x.boost)));
+  // Produção por passo de cada gerador (0.1×0.25s × 2^boost × 2^prestígio) —
+  // níveis de investimento e prestígio não mudam durante o advance.
+  const prestige = prestigeMultOf(g.prestigeLevels);
+  const prodStep = gens.map((x) =>
+    PROD_PER_STEP.mul(boostMultOf(x.boost)).mul(prestige)
+  );
 
   for (let s = 0; s < nSteps; s++) {
     if (gens[0].bought > 0) uptime += SIM_STEP_S;
 
-    // Cada unidade do gerador N produz 0.1 (×2 por investimento) do N-1 por s.
+    // Cada unidade do gerador N produz 0.1 (×2 por investimento × prestígio)
+    // do N-1 por s.
     for (let i = gens.length - 1; i >= 1; i--) {
       gens[i - 1].amount = gens[i - 1].amount.add(gens[i].amount.mul(prodStep[i]));
     }
@@ -266,7 +311,8 @@ function advance(g: Game, nSteps: number): Game {
           if (i > 0) gens[i].prevAtUnlock = gens[i - 1].amount;
           if (i === last) {
             gens.push(newGen());
-            prodStep.push(PROD_PER_STEP); // boost 0 no gerador recém-criado
+            // boost 0 no gerador recém-criado; prestígio já entra no passo
+            prodStep.push(PROD_PER_STEP.mul(prestige));
           }
         }
         break;
@@ -288,6 +334,8 @@ export default function Generators({
   // Amarra a instância ao slot ativo do momento da montagem
   const [saveKey] = useState(() => saveKeyFor('geradores'));
   const [game, setGame] = useState<Game>(() => loadGame(saveKey));
+  // Confirmação em duas etapas do botão de prestígio
+  const [confirmPrestige, setConfirmPrestige] = useState(false);
   // Re-render a cada frame para a extrapolação visual (a simulação em si só
   // avança nos passos fixos — isto é pura cosmética de display).
   const [, bumpFrame] = useReducer((x: number) => x + 1, 0);
@@ -362,6 +410,8 @@ export default function Generators({
         started: g.started,
         startedAt: g.startedAt,
         steps: g.steps,
+        prestigeLevels: g.prestigeLevels,
+        prestigeCount: g.prestigeCount,
         savedAt: Date.now(),
       } satisfies GenSave);
     };
@@ -455,6 +505,31 @@ export default function Generators({
     });
   };
 
+  // Prestígio: sacrifica a run e ganha níveis permanentes (produção ×2 cada).
+  // Volta à tela de modo com o multiplicador já ativo. O próximo gate sobe
+  // (G3 → G6 → G9…) pra não prestigiar de novo no mínimo da run anterior.
+  const doPrestige = () => {
+    setGame((g) => {
+      const gate = prestigeGateOf(g.prestigeCount);
+      const highest = highestUnlocked(g.gens);
+      const gain = prestigeGainOf(g.gens);
+      if (highest < gate || gain <= 0) return g;
+      return {
+        base: START_BASE,
+        totalProduced: new Decimal(0),
+        fragments: 0,
+        gens: [newGen()],
+        mode: g.mode,
+        started: false,
+        steps: 0,
+        uptime: 0,
+        prestigeLevels: g.prestigeLevels + gain,
+        prestigeCount: g.prestigeCount + 1,
+      };
+    });
+    setConfirmPrestige(false);
+  };
+
   // ===== Compra contínua (segurar o botão) =====
   // Pointer down executa a 1ª compra na hora; segurando, após uma pausa
   // curta a ação repete até soltar (as ações já no-op sem saldo).
@@ -493,6 +568,13 @@ export default function Generators({
   });
 
   const isAuto = game.mode === 'auto';
+  const prestigeGate = prestigeGateOf(game.prestigeCount);
+  const prestigeGain = prestigeGainOf(game.gens);
+  const canPrestige =
+    highestUnlocked(game.gens) >= prestigeGate && prestigeGain > 0;
+  const nextPrestigeMult = prestigeMultOf(
+    game.prestigeLevels + (canPrestige ? prestigeGain : 0)
+  );
 
   // ===== Extrapolação visual entre passos fixos =====
   // Fração de segundo desde o último passo executado; os valores exibidos
@@ -505,9 +587,12 @@ export default function Generators({
         )
       : 0;
 
-  /** Taxa de produção por unidade do gerador i (0.1/s × 2^investimentos). */
+  /** Taxa de produção por unidade do gerador i
+      (0.1/s × 2^investimentos × 2^prestígio). */
   const unitRate = (i: number): Decimal =>
-    PROD_PER_UNIT.mul(boostMultOf(game.gens[i].boost));
+    PROD_PER_UNIT.mul(boostMultOf(game.gens[i].boost)).mul(
+      prestigeMultOf(game.prestigeLevels)
+    );
 
   /** Quantidade exibida do gerador i: real + o que o gerador i+1 produziu
       desde o último passo. */
@@ -534,8 +619,10 @@ export default function Generators({
   }>({ signature: '', etas: new Map() });
 
   const unlockEtaAt = (i: number, cost: Decimal): number | null => {
-    // Compras e investimentos mudam a curva de produção → invalidam o cache
-    const signature = game.gens.map((g) => `${g.bought}:${g.boost}`).join(',');
+    // Compras, investimentos e prestígio mudam a curva → invalidam o cache
+    const signature =
+      `${game.prestigeLevels}|` +
+      game.gens.map((g) => `${g.bought}:${g.boost}`).join(',');
     const cache = etaCacheRef.current;
     if (cache.signature !== signature) {
       cache.signature = signature;
@@ -551,11 +638,18 @@ export default function Generators({
   // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo)
   const virtual = useVirtualRows(listRef, game.gens.length, 8);
 
-  // Tela de escolha de modo (aparece com save resetado, antes de iniciar)
+  // Tela de escolha de modo (aparece com save resetado / pós-prestígio)
   if (!game.started) {
     return (
       <div className={styles.modeScreen}>
         <div className={styles.modeCard}>
+          {game.prestigeLevels > 0 && (
+            <span className={styles.prestigeBadge}>
+              {t('prestige.mult', {
+                mult: fmt(prestigeMultOf(game.prestigeLevels)),
+              })}
+            </span>
+          )}
           <h2 className={styles.modeTitle}>{t('mode.title')}</h2>
           <div className={styles.modeOptions}>
             <button
@@ -589,18 +683,59 @@ export default function Generators({
 
   return (
     <div className={styles.wrap}>
-      {/* Toggle de Automático: portalado pra fileira do topo-esquerdo do App,
-          logo após o card de versão — o flex empurra quando ele alarga */}
+      {/* Auto + prestígio: portalados pra fileira do topo-esquerdo do App */}
       {cornerHost &&
         createPortal(
-          <button
-            className={`${styles.exportBtn} ${isAuto ? styles.toggleOn : ''}`}
-            onClick={() =>
-              setGame((g) => ({ ...g, mode: g.mode === 'auto' ? 'manual' : 'auto' }))
-            }
-          >
-            {t('gen.autoToggle', { state: isAuto ? 'on' : 'off' })}
-          </button>,
+          <>
+            <button
+              className={`${styles.exportBtn} ${isAuto ? styles.toggleOn : ''}`}
+              onClick={() =>
+                setGame((g) => ({
+                  ...g,
+                  mode: g.mode === 'auto' ? 'manual' : 'auto',
+                }))
+              }
+            >
+              {t('gen.autoToggle', { state: isAuto ? 'on' : 'off' })}
+            </button>
+            {game.prestigeLevels > 0 && !canPrestige && (
+              <span className={`${styles.exportBtn} ${styles.prestigePill}`}>
+                {t('prestige.mult', {
+                  mult: fmt(prestigeMultOf(game.prestigeLevels)),
+                })}
+              </span>
+            )}
+            {canPrestige &&
+              (confirmPrestige ? (
+                <>
+                  <button
+                    className={`${styles.exportBtn} ${styles.prestigeConfirm}`}
+                    onClick={doPrestige}
+                  >
+                    {t('prestige.confirm', {
+                      gain: prestigeGain,
+                      mult: fmt(nextPrestigeMult),
+                    })}
+                  </button>
+                  <button
+                    className={styles.exportBtn}
+                    onClick={() => setConfirmPrestige(false)}
+                  >
+                    {t('prestige.cancel')}
+                  </button>
+                </>
+              ) : (
+                <button
+                  className={`${styles.exportBtn} ${styles.prestigeBtn}`}
+                  onClick={() => setConfirmPrestige(true)}
+                >
+                  {t('prestige.preview', {
+                    gain: prestigeGain,
+                    mult: fmt(nextPrestigeMult),
+                  })}
+                </button>
+              ))}
+          </>,
           cornerHost
         )}
 
