@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Decimal from 'break_eternity.js';
 import { useVirtualRows } from '../../hooks/useVirtualRows';
 import { fmt, fmtCost, fmtRate, fmtTime } from '../../lib/format';
@@ -274,7 +275,13 @@ function advance(g: Game, nSteps: number): Game {
   return { ...g, base, totalProduced, gens, uptime, steps: g.steps + nSteps };
 }
 
-export default function Generators() {
+export default function Generators({
+  cornerHost,
+}: {
+  /** Fileira do topo-esquerdo do App onde o toggle de Automático é portalado
+      (ao lado do card de versão, que empurra em vez de sobrepor). */
+  cornerHost?: HTMLElement | null;
+}) {
   const { t } = useI18n();
   // Amarra a instância ao slot ativo do momento da montagem
   const [saveKey] = useState(() => saveKeyFor('geradores'));
@@ -565,16 +572,20 @@ export default function Generators() {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.corner}>
-        <button
-          className={`${styles.exportBtn} ${isAuto ? styles.toggleOn : ''}`}
-          onClick={() =>
-            setGame((g) => ({ ...g, mode: g.mode === 'auto' ? 'manual' : 'auto' }))
-          }
-        >
-          {t('gen.autoToggle', { state: isAuto ? 'on' : 'off' })}
-        </button>
-      </div>
+      {/* Toggle de Automático: portalado pra fileira do topo-esquerdo do App,
+          logo após o card de versão — o flex empurra quando ele alarga */}
+      {cornerHost &&
+        createPortal(
+          <button
+            className={`${styles.exportBtn} ${isAuto ? styles.toggleOn : ''}`}
+            onClick={() =>
+              setGame((g) => ({ ...g, mode: g.mode === 'auto' ? 'manual' : 'auto' }))
+            }
+          >
+            {t('gen.autoToggle', { state: isAuto ? 'on' : 'off' })}
+          </button>,
+          cornerHost
+        )}
 
       <div className={styles.resources}>
         <div className={styles.resourceCard}>

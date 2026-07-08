@@ -87,6 +87,20 @@
   color: var(--brass-deep);
 }
 
+/* ===== Fileira do topo-esquerdo =====
+   Versão + cardzinhos portalados pelos jogos (ex.: Automático). Flex com gap:
+   quando o card de versão alarga (aviso de versão nova), empurra os vizinhos
+   em vez de sobrepor. */
+.topLeft {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
 /* ===== Fileira de controles do topo-direito =====
    Um único container fixo alinha telemetria, fullscreen e a engrenagem —
    sem aritmética de offsets fixos por elemento. */
@@ -203,8 +217,9 @@
     letter-spacing: 0.03em;
   }
 
-  /* No mobile a fileira do topo entra no fluxo da página, centralizada e
-     com quebra — Config continua acessível por aqui */
+  /* No mobile as fileiras do topo entram no fluxo da página, centralizadas e
+     com quebra — Config e o Automático continuam acessíveis por aqui */
+  .topLeft,
   .topRight {
     position: static;
     justify-content: center;

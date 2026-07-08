@@ -78,6 +78,9 @@ export default function App() {
   }, []);
 
   const [page, setPage] = useState<Page>(readStoredPage);
+  // Host do topo-esquerdo: os jogos portalam seus cardzinhos pra cá, na mesma
+  // fileira do card de versão (estado, não ref: precisa re-renderizar ao montar)
+  const [topLeftEl, setTopLeftEl] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     try {
       localStorage.setItem(PAGE_KEY, page);
@@ -159,13 +162,21 @@ export default function App() {
           <SettingsIcon className={styles.cornerIcon} aria-hidden="true" />
         </button>
       </div>
-      <VersionBadge />
+      {/* Fileira do topo-esquerdo: versão + cardzinhos que os jogos portalam
+          aqui (ex.: toggle de Automático) — o flex empurra sem sobrepor,
+          mesmo quando o card de versão alarga (aviso de versão nova) */}
+      <div className={styles.topLeft} ref={setTopLeftEl}>
+        <VersionBadge />
+      </div>
 
       {/* As telas ficam sempre montadas para o progresso não resetar ao trocar de aba. */}
       <main
         className={`${styles.contentFull} ${page !== 'geradores' ? styles.hidden : ''}`}
       >
-        <Generators key={`${slotEpoch}:${resetKeys.geradores}`} />
+        <Generators
+          key={`${slotEpoch}:${resetKeys.geradores}`}
+          cornerHost={page === 'geradores' ? topLeftEl : null}
+        />
       </main>
       <main
         className={`${styles.contentFull} ${page !== 'atividade' ? styles.hidden : ''}`}

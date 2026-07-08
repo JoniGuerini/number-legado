@@ -12,22 +12,14 @@
   background: var(--border);
 }
 
-/* Card da versão: canto oposto, onde morava o botão de fullscreen */
+/* Card da versão: vive dentro da fileira .topLeft do App */
 .verBar {
-  position: fixed;
-  top: 8px;
-  left: 8px;
   display: flex;
 }
 
 /* Mobile: entra no fluxo, no topo da página */
 @media (max-width: 640px) {
   .bar {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .verBar {
-    position: static;
     justify-content: center;
     flex-wrap: wrap;
   }

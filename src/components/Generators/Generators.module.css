@@ -78,18 +78,6 @@
 }
 
 
-/* Hub de cardzinhos no canto superior esquerdo, lado a lado */
-.corner {
-  position: fixed;
-  top: 8px;
-  /* Reserva o espaço do card da versão (fixo em left:8, ~80px de largura)
-     + 8px de gap para os cardzinhos começarem logo depois, sem sobreposição */
-  left: 96px;
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-}
-
 .exportBtn {
   display: flex;
   align-items: center;
@@ -438,12 +426,6 @@
 
 /* ===== Mobile ===== */
 @media (max-width: 640px) {
-  /* Hub de pills entra no fluxo da página, centralizado e com quebra */
-  .corner {
-    position: static;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
   .exportBtn {
     white-space: nowrap;
   }
