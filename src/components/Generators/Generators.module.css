@@ -193,14 +193,6 @@
   text-align: left;
 }
 
-/* Títulos dos botões: mesma largura dos botões pra alinhar certinho */
-.headerBoost {
-  width: 110px;
-}
-.headerBuy {
-  width: 120px;
-}
-
 .listWrap {
   position: relative;
   flex: 1;
@@ -414,6 +406,25 @@
   gap: 8px;
 }
 
+/* Bandeja em baixo relevo (uma por botão): área afundada no card onde o
+   botão assenta, parecendo nivelado com a superfície do card pai */
+.actionsTray {
+  display: flex;
+  background: var(--bg);
+  border-radius: 4px;
+  box-shadow: var(--card-edge-press);
+  padding: 6px;
+}
+
+/* Header: títulos com a largura total de cada bandeja (botão + 6px de
+   padding por lado) pra continuarem centralizados sobre os botões */
+.headerBoost {
+  width: 122px;
+}
+.headerBuy {
+  width: 132px;
+}
+
 /* Investir fragmentos: mesmo porte do botão de comprar, tom secundário
    (btn-secondary) pra diferenciar do custo em número base */
 .row button.boostBtn {
@@ -473,5 +484,10 @@
   .row button {
     width: 100%;
     padding: 12px 0;
+  }
+  /* Bandejas dividem a linha meio a meio */
+  .actionsTray {
+    flex: 1;
+    min-width: 0;
   }
 }

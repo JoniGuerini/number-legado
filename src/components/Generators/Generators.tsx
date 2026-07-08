@@ -416,6 +416,43 @@ export default function Generators() {
     });
   };
 
+  // ===== Compra contínua (segurar o botão) =====
+  // Pointer down executa a 1ª compra na hora; segurando, após uma pausa
+  // curta a ação repete até soltar (as ações já no-op sem saldo).
+  const holdRef = useRef<{ timeout: number; interval: number | null } | null>(
+    null
+  );
+
+  const stopHold = () => {
+    if (!holdRef.current) return;
+    clearTimeout(holdRef.current.timeout);
+    if (holdRef.current.interval !== null) clearInterval(holdRef.current.interval);
+    holdRef.current = null;
+  };
+
+  const startHold = (action: () => void) => {
+    stopHold();
+    action();
+    const timeout = window.setTimeout(() => {
+      if (holdRef.current) holdRef.current.interval = window.setInterval(action, 80);
+    }, 400);
+    holdRef.current = { timeout, interval: null };
+  };
+
+  useEffect(() => stopHold, []);
+
+  /** Props de segurar-pra-repetir; o clique de mouse é ignorado (a compra já
+      aconteceu no pointer down) mas Enter/Espaço seguem funcionando. */
+  const holdProps = (action: () => void) => ({
+    onPointerDown: () => startHold(action),
+    onPointerUp: stopHold,
+    onPointerLeave: stopHold,
+    onPointerCancel: stopHold,
+    onClick: (e: React.MouseEvent) => {
+      if (e.detail === 0) action(); // e.detail 0 = clique via teclado
+    },
+  });
+
   const isAuto = game.mode === 'auto';
 
   // ===== Extrapolação visual entre passos fixos =====
@@ -671,25 +708,29 @@ export default function Generators() {
               </div>
 
               <div className={styles.actions}>
-                <button
-                  className={`btn-secondary ${styles.boostBtn}`}
-                  disabled={game.fragments < boostCostOf(gen.boost)}
-                  onClick={() => buyBoost(i)}
-                  aria-label={t('frag.investAria', {
-                    n: i + 1,
-                    cost: boostCostOf(gen.boost),
-                  })}
-                >
-                  {t('frag.investBtn', { cost: fmt(boostCostOf(gen.boost)) })}
-                </button>
+                <div className={styles.actionsTray}>
+                  <button
+                    className={`btn-secondary ${styles.boostBtn}`}
+                    disabled={game.fragments < boostCostOf(gen.boost)}
+                    {...holdProps(() => buyBoost(i))}
+                    aria-label={t('frag.investAria', {
+                      n: i + 1,
+                      cost: boostCostOf(gen.boost),
+                    })}
+                  >
+                    {t('frag.investBtn', { cost: fmt(boostCostOf(gen.boost)) })}
+                  </button>
+                </div>
 
-                <button
-                  className="btn-primary"
-                  disabled={isAuto || game.base.lt(cost)}
-                  onClick={() => buy(i)}
-                >
-                  {fmtCost(cost)}
-                </button>
+                <div className={styles.actionsTray}>
+                  <button
+                    className="btn-primary"
+                    disabled={isAuto || game.base.lt(cost)}
+                    {...holdProps(() => buy(i))}
+                  >
+                    {fmtCost(cost)}
+                  </button>
+                </div>
               </div>
             </div>
           );

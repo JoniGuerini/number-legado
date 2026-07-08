@@ -42,29 +42,37 @@ export default function App() {
 
   // Feedback sonoro global: um som ao pressionar qualquer botão habilitado e
   // outro (variação mais leve) ao soltar — sensação de tecla física.
+  // CAPTURE, não bubble: o React processa o clique (compra etc.) de forma
+  // síncrona antes de o evento chegar ao document, e a compra bem-sucedida
+  // costuma DESABILITAR o botão (preço sobe > saldo) — no bubble, o clique
+  // que funcionou era avaliado contra o DOM pós-compra e ficava mudo.
   useEffect(() => {
-    let pressed = false;
+    // Um registro por pointerId: dois dedos no touch não engolem o soltar.
+    const down = new Set<number>();
 
     const onPointerDown = (e: PointerEvent) => {
       const btn = (e.target as HTMLElement | null)?.closest?.('button');
       if (btn && !btn.disabled && !btn.hasAttribute('data-nosound')) {
-        pressed = true;
+        down.add(e.pointerId);
         playPress();
       }
     };
     // O soltar toca mesmo se o dedo/cursor saiu do botão (como tecla real)
-    const onPointerUp = () => {
-      if (pressed) {
-        pressed = false;
-        playRelease();
-      }
+    const onPointerUp = (e: PointerEvent) => {
+      if (down.delete(e.pointerId)) playRelease();
+    };
+    // Gesto cancelado (virou scroll etc.): esquece o toque sem som de soltar
+    const onPointerCancel = (e: PointerEvent) => {
+      down.delete(e.pointerId);
     };
 
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('pointerup', onPointerUp, true);
+    document.addEventListener('pointercancel', onPointerCancel, true);
     return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('pointerup', onPointerUp);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('pointerup', onPointerUp, true);
+      document.removeEventListener('pointercancel', onPointerCancel, true);
     };
   }, []);
 
