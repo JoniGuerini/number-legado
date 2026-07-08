@@ -12,12 +12,12 @@ export type SaveGame = 'geradores' | 'ciclos' | 'reino';
     já no sistema de slots, então nunca teve chave legada (o valor abaixo não
     existe no storage e a migração simplesmente o ignora). */
 const LEGACY_KEYS: Record<SaveGame, string> = {
-  geradores: 'number-test:geradores',
-  ciclos: 'number-test:ciclos',
-  reino: 'number-test:reino',
+  geradores: 'number-legado:geradores',
+  ciclos: 'number-legado:ciclos',
+  reino: 'number-legado:reino',
 };
 
-const SLOTS_META_KEY = 'number-test:slots';
+const SLOTS_META_KEY = 'number-legado:slots';
 const GAMES: SaveGame[] = ['geradores', 'ciclos', 'reino'];
 
 export interface SlotMeta {
@@ -33,7 +33,7 @@ interface SlotsState {
 }
 
 const slotKey = (slotId: string, game: SaveGame): string =>
-  `number-test:slot:${slotId}:${game}`;
+  `number-legado:slot:${slotId}:${game}`;
 
 const genId = (): string =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 8);

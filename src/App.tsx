@@ -27,7 +27,7 @@ export type GameTab = 'geradores' | 'ciclos' | 'reino';
 type Page = GameTab | 'atividade' | 'chat' | 'notas';
 
 /* A última página visitada sobrevive ao refresh */
-const PAGE_KEY = 'number-test:page';
+const PAGE_KEY = 'number-legado:page';
 const PAGES: Page[] = ['reino', 'geradores', 'ciclos', 'atividade', 'chat', 'notas'];
 
 function readStoredPage(): Page {

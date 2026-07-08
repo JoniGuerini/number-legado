@@ -10,7 +10,7 @@ function getCtx(): AudioContext {
   return ctx;
 }
 
-const CONFIG_KEY = 'number-test:config';
+const CONFIG_KEY = 'number-legado:config';
 
 interface SoundConfig {
   volume?: number;

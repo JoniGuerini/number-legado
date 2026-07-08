@@ -19,7 +19,7 @@ export type { Dict, TKey } from './pt';
 
 export type Locale = 'pt' | 'en' | 'es';
 
-const LOCALE_KEY = 'number-test:locale';
+const LOCALE_KEY = 'number-legado:locale';
 
 /** Language names in themselves (autonyms) — never translated. */
 export const LOCALES: { id: Locale; name: string }[] = [

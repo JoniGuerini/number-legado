@@ -3,7 +3,7 @@ import { useI18n } from '../../lib/locale';
 import styles from './FullscreenToggle.module.css';
 
 /** Lembra a preferência de tela cheia entre sessões/refresh. */
-const FLAG_KEY = 'number-test:fullscreen';
+const FLAG_KEY = 'number-legado:fullscreen';
 
 function readFlag(): boolean {
   try {

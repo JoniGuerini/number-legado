@@ -2,7 +2,7 @@
     tema de cores. Vive na mesma chave de config do som — os módulos gravam
     por merge. */
 
-const CONFIG_KEY = 'number-test:config';
+const CONFIG_KEY = 'number-legado:config';
 
 /* ===== Tema de cores ===== */
 
