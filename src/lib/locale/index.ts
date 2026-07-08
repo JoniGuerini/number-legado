@@ -2,7 +2,7 @@
     localStorage and a reactive hook in the same pattern as prefs
     (useSyncExternalStore).
 
-    Usage: const { t } = useI18n(); t('nav.geradores'); t('saves.reset', { game: '...' })
+    Usage: const { t } = useI18n(); t('nav.geradores'); t('saves.deleteAria', { name: '...' })
 
     Adding a language (checklist):
     1. Create `src/lib/locale/xx.ts` exporting `const xx: Dict` — the compiler

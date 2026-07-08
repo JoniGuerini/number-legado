@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { Fragment, useState, useSyncExternalStore } from 'react';
 import type { GameTab } from '../../App';
 import {
   getDateLocale,
@@ -141,6 +141,8 @@ export default function Settings({
   const [soundOn, setSoundOnState] = useState(isSoundOn());
   // Confirmação em duas etapas do botão de restaurar configs
   const [confirmReset, setConfirmReset] = useState(false);
+  // Confirmação em duas etapas do reset de um jogo salvo ("slotId:game")
+  const [confirmSaveReset, setConfirmSaveReset] = useState<string | null>(null);
 
   const toggleSound = () => {
     setSoundOn(!soundOn);
@@ -199,6 +201,8 @@ export default function Settings({
                       <button
                         className={`${styles.option} ${active ? styles.active : ''}`}
                         onClick={() => {
+                          // Fechar/trocar de save descarta confirmações pendentes
+                          setConfirmSaveReset(null);
                           if (expanded) {
                             setExpandedSlotId(null);
                           } else {
@@ -300,16 +304,38 @@ export default function Settings({
                           </button>
                         )}
                         <div className={styles.resetRow}>
-                          {GAMES.map((game) => (
-                            <button
-                              key={game}
-                              className={styles.dangerBtn}
-                              disabled={!hasProgress(slot.id, game)}
-                              onClick={() => onReset(slot.id, game)}
-                            >
-                              {t('saves.reset', { game: t(`nav.${game}`) })}
-                            </button>
-                          ))}
+                          {GAMES.map((game) => {
+                            const key = `${slot.id}:${game}`;
+                            // O botão vira o par confirmar/cancelar no lugar
+                            return confirmSaveReset === key ? (
+                              <Fragment key={game}>
+                                <button
+                                  className={styles.dangerBtn}
+                                  onClick={() => {
+                                    onReset(slot.id, game);
+                                    setConfirmSaveReset(null);
+                                  }}
+                                >
+                                  {t('saves.resetConfirm')}
+                                </button>
+                                <button
+                                  className="btn-secondary"
+                                  onClick={() => setConfirmSaveReset(null)}
+                                >
+                                  {t('saves.cancel')}
+                                </button>
+                              </Fragment>
+                            ) : (
+                              <button
+                                key={game}
+                                className={styles.dangerBtn}
+                                disabled={!hasProgress(slot.id, game)}
+                                onClick={() => setConfirmSaveReset(key)}
+                              >
+                                {t('saves.reset')}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

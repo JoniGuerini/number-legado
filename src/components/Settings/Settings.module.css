@@ -232,7 +232,8 @@
   gap: 8px;
   width: 100%;
 }
-.resetRow .dangerBtn {
+/* Vale pro botão de reset e pro par confirmar/cancelar que o substitui */
+.resetRow button {
   flex: 1 1 45%;
   min-width: 0;
 }

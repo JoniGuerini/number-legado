@@ -82,15 +82,20 @@
 .corner {
   position: fixed;
   top: 8px;
-  /* Reserva o espaço do botão de tela cheia (fixo em left:8, 32px de largura)
+  /* Reserva o espaço do card da versão (fixo em left:8, ~80px de largura)
      + 8px de gap para os cardzinhos começarem logo depois, sem sobreposição */
-  left: 48px;
+  left: 96px;
   display: flex;
   align-items: stretch;
   gap: 8px;
 }
 
 .exportBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Mesma altura dos pills vizinhos (versão/telemetria), cuja fonte é maior */
+  min-height: 26px;
   background: var(--paper);
   border: none;
   border-radius: 4px;

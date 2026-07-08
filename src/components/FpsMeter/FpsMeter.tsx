@@ -125,7 +125,6 @@ export default function FpsMeter() {
     domNodes: 0,
   });
   const battery = useBattery();
-  const updateAvailable = useUpdateAvailable();
   const prefs = useSyncExternalStore(subscribeVideoPrefs, getVideoPrefs);
 
   useEffect(() => {
@@ -209,6 +208,27 @@ export default function FpsMeter() {
           <span className={styles.label}>dom</span>
         </div>
       )}
+      {/* Com telemetria visível, um separador a aparta dos menus padrões */}
+      {(import.meta.env.DEV ||
+        prefs.showFps ||
+        prefs.showFrameTime ||
+        (prefs.showBattery && battery !== null) ||
+        (prefs.showMemory && stats.heapMb !== null) ||
+        prefs.showDomNodes) && (
+        <span className={styles.groupDivider} aria-hidden="true" />
+      )}
+    </div>
+  );
+}
+
+/** Card da versão, no canto oposto ao da telemetria (topo-esquerdo).
+    Com deploy novo detectado, vira o botão de recarregar. */
+export function VersionBadge() {
+  const { t } = useI18n();
+  const updateAvailable = useUpdateAvailable();
+
+  return (
+    <div className={styles.verBar}>
       {updateAvailable ? (
         <button
           className={`${styles.pill} ${styles.updatePill}`}

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import Generators from './components/Generators/Generators';
 import Activity from './components/Activity/Activity';
 import Settings from './components/Settings/Settings';
-import FpsMeter from './components/FpsMeter/FpsMeter';
+import FpsMeter, { VersionBadge } from './components/FpsMeter/FpsMeter';
 import FullscreenToggle from './components/FullscreenToggle/FullscreenToggle';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useI18n } from './lib/locale';
@@ -143,8 +144,22 @@ export default function App() {
 
   return (
     <div className={styles.frame}>
-      <FullscreenToggle />
-      <FpsMeter />
+      {/* Fileira de controles do topo-direito: telemetria, fullscreen e a
+          engrenagem de Config colada na borda */}
+      <div className={styles.topRight}>
+        <FpsMeter />
+        <FullscreenToggle />
+        <button
+          className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${settingsOpen ? styles.cornerBtnOn : ''}`}
+          onClick={() => setSettingsOpen((o) => !o)}
+          aria-label={t('nav.config')}
+          aria-pressed={settingsOpen}
+          title={t('nav.config')}
+        >
+          <SettingsIcon className={styles.cornerIcon} aria-hidden="true" />
+        </button>
+      </div>
+      <VersionBadge />
 
       {/* As telas ficam sempre montadas para o progresso não resetar ao trocar de aba. */}
       <main
@@ -176,12 +191,6 @@ export default function App() {
               {t(`nav.${p}`)}
             </button>
           ))}
-          <button
-            className={`${styles.tab} ${settingsOpen ? styles.active : ''}`}
-            onClick={() => setSettingsOpen((o) => !o)}
-          >
-            {t('nav.config')}
-          </button>
         </nav>
       </footer>
 
