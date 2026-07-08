@@ -626,7 +626,10 @@ export default function Generators({
       <div className={styles.tableArea}>
         {/* Card-header fixo acima da lista: títulos de todas as colunas (os
             cards mostram só valores; no mobile os cards viram pilha vertical,
-            o header some e os rótulos voltam pra dentro de cada card) */}
+            o header some e os rótulos voltam pra dentro de cada card).
+            Antes da primeira compra só existe o botão de desbloqueio na
+            lista — sem cards de stats, o header não tem o que titular. */}
+        {game.gens[0].bought > 0 && (
         <div className={`${styles.row} ${styles.headerRow}`}>
           <span className={styles.headerCell}>{t('gen.colGen')}</span>
           <span className={styles.headerCell}>{t('gen.owns')}</span>
@@ -654,6 +657,7 @@ export default function Generators({
             </span>
           </div>
         </div>
+        )}
 
         <div className={styles.listWrap}>
         {edges.above && (
