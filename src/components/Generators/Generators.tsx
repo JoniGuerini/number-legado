@@ -614,6 +614,7 @@ export default function Generators({
           <span className={styles.headerCell}>{t('gen.colGen')}</span>
           <span className={styles.headerCell}>{t('gen.owns')}</span>
           <span className={styles.headerCell}>{t('gen.colProduces')}</span>
+          <span className={styles.headerCell}>{t('gen.colLevel')}</span>
           <span className={styles.headerCell}>{t('frag.next')}</span>
           <div className={styles.actions}>
             <span className={`${styles.headerCell} ${styles.headerBoost}`}>
@@ -714,6 +715,11 @@ export default function Generators({
                   <span className={styles.statValue}>
                     +{fmtRate(dispAmount(i).mul(unitRate(i)))} / s
                   </span>
+                </div>
+
+                <div className={styles.stat}>
+                  <span className={styles.statLabel}>{t('gen.colLevel')}</span>
+                  <span className={styles.statValue}>{fmt(gen.boost)}</span>
                 </div>
 
                 <div className={styles.stat}>

@@ -33,6 +33,7 @@ export const pt = {
   'gen.colGen': 'gerador',
   'gen.colProduces': 'produz',
   'gen.colInvest': 'investir',
+  'gen.colLevel': 'nível',
   'gen.colBuy': 'comprar',
   // Timer do botão de desbloqueio quando o custo já foi atingido
   'gen.unlockReady': 'Pronto',

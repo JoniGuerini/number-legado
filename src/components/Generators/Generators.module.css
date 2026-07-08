@@ -249,7 +249,7 @@
   /* Colunas de largura fixa + space-between = mesma distância entre todas
      (o log de desbloqueios vive na aba Atividade); a última é o par de
      botões investir + comprar, colados um no outro */
-  grid-template-columns: 90px 160px 180px 140px auto;
+  grid-template-columns: 90px 160px 180px 70px 140px auto;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
