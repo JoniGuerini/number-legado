@@ -649,11 +649,19 @@ export default function Generators({
     after: Map<number, number | null>;
   }>({ signature: '', nowS: null, after: new Map() });
 
-  /** Texto do tooltip do botão investir: quanto o próximo desbloqueio
+  /** Conteúdo do tooltip do botão investir: quanto o próximo desbloqueio
       encolhe se este gerador ganhar +1 nível agora. */
-  const investTooltip = (i: number): string => {
+  const investTooltip = (
+    i: number
+  ): {
+    title: string;
+    now?: string;
+    after?: string;
+    saved?: string;
+    note?: string;
+  } => {
     if (nextLockedIdx < 0 || nextUnlockCost === null) {
-      return t('frag.investTipReady');
+      return { title: t('frag.investTipReady') };
     }
     const signature =
       `${game.prestigeLevels}|` +
@@ -676,21 +684,70 @@ export default function Generators({
     const nowS = cache.nowS;
     const afterS = cache.after.get(i) ?? null;
 
-    if (nowS === 0) return t('frag.investTipReady');
-    if (nowS === null && afterS === null) return t('frag.investTipUnknown');
-    if (nowS === null && afterS !== null) {
-      return t('frag.investTipUnlocks', { after: fmtTime(afterS) });
+    if (nowS === 0) return { title: t('frag.investTipReady') };
+    if (nowS === null && afterS === null) {
+      return { title: t('frag.investTipUnknown') };
     }
-    if (nowS !== null && afterS === null) return t('frag.investTipUnknown');
+    if (nowS === null && afterS !== null) {
+      return {
+        title: t('frag.investTipTitle'),
+        after: fmtTime(afterS),
+        note: t('frag.investTipBecomes'),
+      };
+    }
+    if (nowS !== null && afterS === null) {
+      return { title: t('frag.investTipUnknown') };
+    }
 
     const saved = Math.max((nowS as number) - (afterS as number), 0);
-    if (saved < 0.5) return t('frag.investTipNoChange', { now: fmtTime(nowS!) });
-    return t('frag.investTipSave', {
+    if (saved < 0.5) {
+      return {
+        title: t('frag.investTipTitle'),
+        now: fmtTime(nowS!),
+        after: fmtTime(afterS!),
+        note: t('frag.investTipNoChange'),
+      };
+    }
+    return {
+      title: t('frag.investTipTitle'),
       now: fmtTime(nowS!),
       after: fmtTime(afterS!),
       saved: fmtTime(saved),
+    };
+  };
+
+  const tipWithNums = (text: string) =>
+    text.split(/(\d+)/).map((part, idx) =>
+      /^\d+$/.test(part) ? (
+        <span key={idx} className={styles.investTipNum}>
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
+
+  // Tooltip do investir: portal no body (a lista tem overflow e cortaria
+  // um ::after absoluto; botão disabled também não recebe :hover confiável).
+  const [investTip, setInvestTip] = useState<{
+    title: string;
+    now?: string;
+    after?: string;
+    saved?: string;
+    note?: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const showInvestTip = (el: HTMLElement, i: number) => {
+    const r = el.getBoundingClientRect();
+    setInvestTip({
+      ...investTooltip(i),
+      x: r.left + r.width / 2,
+      y: r.top,
     });
   };
+  const hideInvestTip = () => setInvestTip(null);
 
   // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo)
   const virtual = useVirtualRows(listRef, game.gens.length, 8);
@@ -862,7 +919,11 @@ export default function Generators({
           </button>
         )}
 
-        <div className={styles.list} ref={listRef}>
+        <div
+          className={styles.list}
+          ref={listRef}
+          onScroll={hideInvestTip}
+        >
           {game.gens.map((gen, i) => {
           if (i < virtual.first || i > virtual.last) {
             return (
@@ -966,7 +1027,11 @@ export default function Generators({
               </div>
 
               <div className={styles.actions}>
-                <div className={styles.actionsTray}>
+                <div
+                  className={styles.actionsTray}
+                  onPointerEnter={(e) => showInvestTip(e.currentTarget, i)}
+                  onPointerLeave={hideInvestTip}
+                >
                   <button
                     className={`btn-secondary ${styles.boostBtn}`}
                     disabled={game.fragments < boostCostOf(i, gen.boost)}
@@ -975,7 +1040,6 @@ export default function Generators({
                       n: i + 1,
                       cost: boostCostOf(i, gen.boost),
                     })}
-                    data-tip={investTooltip(i)}
                   >
                     {t('frag.investBtn', { cost: fmt(boostCostOf(i, gen.boost)) })}
                   </button>
@@ -1007,6 +1071,55 @@ export default function Generators({
           )}
         </div>
       </div>
+
+      {investTip &&
+        createPortal(
+          <div
+            className={styles.investTip}
+            style={{ left: investTip.x, top: investTip.y }}
+            role="tooltip"
+          >
+            <span className={styles.investTipTitle}>{investTip.title}</span>
+            {(investTip.now || investTip.after) && (
+              <div className={styles.investTipRow}>
+                {investTip.now && (
+                  <div className={styles.investTipCard}>
+                    <span className={styles.investTipLabel}>
+                      {t('frag.investTipNow')}
+                    </span>
+                    <span className={styles.investTipValue}>
+                      {tipWithNums(investTip.now)}
+                    </span>
+                  </div>
+                )}
+                {investTip.after && (
+                  <div className={styles.investTipCard}>
+                    <span className={styles.investTipLabel}>
+                      {t('frag.investTipAfter')}
+                    </span>
+                    <span className={styles.investTipValue}>
+                      {tipWithNums(investTip.after)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            {investTip.saved && (
+              <div className={`${styles.investTipCard} ${styles.investTipSave}`}>
+                <span className={styles.investTipLabel}>
+                  {t('frag.investTipSaved')}
+                </span>
+                <span className={styles.investTipValue}>
+                  −{tipWithNums(investTip.saved)}
+                </span>
+              </div>
+            )}
+            {investTip.note && (
+              <span className={styles.investTipNote}>{investTip.note}</span>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

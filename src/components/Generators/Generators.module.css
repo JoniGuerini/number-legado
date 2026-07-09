@@ -476,36 +476,72 @@
    (btn-secondary) pra diferenciar do custo em número base */
 .row button.boostBtn {
   width: 110px;
-  position: relative;
 }
 
-/* Tooltip do investir: previsão do próximo desbloqueio com +1 nível */
-.row button.boostBtn[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+/* Tooltip do investir: portal no body, layout em mini-cards */
+.investTip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 10px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: max-content;
-  max-width: 240px;
-  padding: 8px 10px;
+  padding: 10px;
   background: var(--paper);
-  color: var(--ink);
   border-radius: 4px;
   box-shadow: var(--card-edge-lg);
-  font: 500 11px/1.35 var(--mono);
-  letter-spacing: 0.02em;
-  text-transform: none;
-  white-space: pre-line;
-  text-align: center;
-  opacity: 0;
   pointer-events: none;
-  transition: opacity 0.12s;
-  z-index: 20;
+  z-index: 1000;
 }
-.row button.boostBtn[data-tip]:hover::after,
-.row button.boostBtn[data-tip]:focus-visible::after {
-  opacity: 1;
+.investTipTitle {
+  padding: 0 2px;
+  font: 500 10px/1.2 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-align: center;
+}
+.investTipRow {
+  display: flex;
+  gap: 8px;
+}
+.investTipCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 72px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 4px;
+  box-shadow: var(--card-edge-press);
+}
+.investTipLabel {
+  font: 500 9px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.investTipValue {
+  font: 500 12px/1.2 var(--mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.investTipSave {
+  width: 100%;
+  box-sizing: border-box;
+}
+.investTipSave .investTipValue {
+  color: var(--brass-deep);
+}
+.investTipNote {
+  font: 500 10px/1.3 var(--mono);
+  color: var(--ink-muted);
+  text-align: center;
+}
+.investTipNum {
+  color: var(--brass-deep);
 }
 
 /* ===== Mobile ===== */

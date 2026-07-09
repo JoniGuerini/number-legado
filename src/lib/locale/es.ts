@@ -40,10 +40,12 @@ export const es: Dict = {
   'frag.investBtn': '{cost}',
   'frag.investAria':
     'Invertir {cost} fragmentos: duplica la producción del generador {n}',
-  'frag.investTipSave':
-    'Siguiente generador\n{now} → {after}\n−{saved}',
-  'frag.investTipNoChange': 'Siguiente generador\n{now}\n(sin cambio)',
-  'frag.investTipUnlocks': 'Siguiente generador\npasa a {after}',
+  'frag.investTipTitle': 'Siguiente generador',
+  'frag.investTipNow': 'ahora',
+  'frag.investTipAfter': 'después',
+  'frag.investTipSaved': 'ahorra',
+  'frag.investTipNoChange': 'sin cambio',
+  'frag.investTipBecomes': 'pasa a ser alcanzable',
   'frag.investTipReady': 'Siguiente generador ya listo',
   'frag.investTipUnknown': 'Sin estimación de desbloqueo',
 

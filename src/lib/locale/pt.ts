@@ -47,10 +47,12 @@ export const pt = {
   'frag.investBtn': '{cost}',
   'frag.investAria':
     'Investir {cost} fragmentos: dobra a produção do gerador {n}',
-  'frag.investTipSave':
-    'Próximo gerador\n{now} → {after}\n−{saved}',
-  'frag.investTipNoChange': 'Próximo gerador\n{now}\n(sem mudança)',
-  'frag.investTipUnlocks': 'Próximo gerador\npassa a {after}',
+  'frag.investTipTitle': 'Próximo gerador',
+  'frag.investTipNow': 'agora',
+  'frag.investTipAfter': 'depois',
+  'frag.investTipSaved': 'economiza',
+  'frag.investTipNoChange': 'sem mudança',
+  'frag.investTipBecomes': 'passa a ser alcançável',
   'frag.investTipReady': 'Próximo gerador já pronto',
   'frag.investTipUnknown': 'Sem previsão de desbloqueio',
 
