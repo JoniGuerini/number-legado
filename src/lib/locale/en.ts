@@ -40,6 +40,12 @@ export const en: Dict = {
   'frag.investBtn': '{cost}',
   'frag.investAria':
     'Invest {cost} fragments: doubles generator {n} production',
+  'frag.investTipSave':
+    'Next generator\n{now} → {after}\n−{saved}',
+  'frag.investTipNoChange': 'Next generator\n{now}\n(no change)',
+  'frag.investTipUnlocks': 'Next generator\nbecomes {after}',
+  'frag.investTipReady': 'Next generator already ready',
+  'frag.investTipUnknown': 'No unlock estimate',
 
   'prestige.mult': '×{mult}',
   'prestige.preview': 'Prestige +{gain} → ×{mult}',

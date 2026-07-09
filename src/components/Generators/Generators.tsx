@@ -635,6 +635,63 @@ export default function Generators({
     return cache.etas.get(i) ?? null;
   };
 
+  // Índice do próximo gerador ainda bloqueado (alvo do timer de desbloqueio).
+  const nextLockedIdx = game.gens.findIndex((g) => g.bought === 0);
+  const nextUnlockCost =
+    nextLockedIdx >= 0 ? costOf(nextLockedIdx, 0) : null;
+
+  // Cache do ETA "se eu investir +1 neste gerador" — mesma assinatura do ETA
+  // atual, chaveado pelo índice do boost. Só recalcula no hover implícito
+  // (render dos cards visíveis) quando compras/boosts mudam.
+  const boostEtaCacheRef = useRef<{
+    signature: string;
+    nowS: number | null;
+    after: Map<number, number | null>;
+  }>({ signature: '', nowS: null, after: new Map() });
+
+  /** Texto do tooltip do botão investir: quanto o próximo desbloqueio
+      encolhe se este gerador ganhar +1 nível agora. */
+  const investTooltip = (i: number): string => {
+    if (nextLockedIdx < 0 || nextUnlockCost === null) {
+      return t('frag.investTipReady');
+    }
+    const signature =
+      `${game.prestigeLevels}|` +
+      game.gens.map((g) => `${g.bought}:${g.boost}`).join(',');
+    const cache = boostEtaCacheRef.current;
+    if (cache.signature !== signature) {
+      cache.signature = signature;
+      cache.nowS = timeToUnlock(game, nextUnlockCost);
+      cache.after = new Map();
+    }
+    if (!cache.after.has(i)) {
+      const boosted: Game = {
+        ...game,
+        gens: game.gens.map((g, j) =>
+          j === i ? { ...g, boost: g.boost + 1 } : g
+        ),
+      };
+      cache.after.set(i, timeToUnlock(boosted, nextUnlockCost));
+    }
+    const nowS = cache.nowS;
+    const afterS = cache.after.get(i) ?? null;
+
+    if (nowS === 0) return t('frag.investTipReady');
+    if (nowS === null && afterS === null) return t('frag.investTipUnknown');
+    if (nowS === null && afterS !== null) {
+      return t('frag.investTipUnlocks', { after: fmtTime(afterS) });
+    }
+    if (nowS !== null && afterS === null) return t('frag.investTipUnknown');
+
+    const saved = Math.max((nowS as number) - (afterS as number), 0);
+    if (saved < 0.5) return t('frag.investTipNoChange', { now: fmtTime(nowS!) });
+    return t('frag.investTipSave', {
+      now: fmtTime(nowS!),
+      after: fmtTime(afterS!),
+      saved: fmtTime(saved),
+    });
+  };
+
   // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo)
   const virtual = useVirtualRows(listRef, game.gens.length, 8);
 
@@ -918,6 +975,7 @@ export default function Generators({
                       n: i + 1,
                       cost: boostCostOf(i, gen.boost),
                     })}
+                    data-tip={investTooltip(i)}
                   >
                     {t('frag.investBtn', { cost: fmt(boostCostOf(i, gen.boost)) })}
                   </button>

@@ -277,7 +277,9 @@
 .row {
   flex-shrink: 0;
   position: relative;
-  overflow: hidden;
+  /* visible: o tooltip do investir sobe acima do card; o botão de
+     desbloqueio já tem overflow:hidden próprio pro fill da barra */
+  overflow: visible;
   display: grid;
   /* Colunas de largura fixa + space-between = mesma distância entre todas
      (o log de desbloqueios vive na aba Atividade); a última é o par de
@@ -474,6 +476,36 @@
    (btn-secondary) pra diferenciar do custo em número base */
 .row button.boostBtn {
   width: 110px;
+  position: relative;
+}
+
+/* Tooltip do investir: previsão do próximo desbloqueio com +1 nível */
+.row button.boostBtn[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 240px;
+  padding: 8px 10px;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 4px;
+  box-shadow: var(--card-edge-lg);
+  font: 500 11px/1.35 var(--mono);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: pre-line;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+  z-index: 20;
+}
+.row button.boostBtn[data-tip]:hover::after,
+.row button.boostBtn[data-tip]:focus-visible::after {
+  opacity: 1;
 }
 
 /* ===== Mobile ===== */
