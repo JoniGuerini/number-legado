@@ -54,8 +54,11 @@ export const pt = {
   'frag.investTipNow': 'agora',
   'frag.investTipAfter': 'depois',
   'frag.investTipSaved': 'economiza',
+  'frag.investTipDelayed': 'atrasa',
+  'frag.investTipUnits': 'compra',
   'frag.investTipNoChange': 'sem mudança',
   'frag.investTipBecomes': 'passa a ser alcançável',
+  'frag.investTipCantAfford': 'saldo insuficiente',
   'frag.investTipReady': 'Próximo gerador já pronto',
   'frag.investTipUnknown': 'Sem previsão de desbloqueio',
 

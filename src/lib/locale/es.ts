@@ -47,8 +47,11 @@ export const es: Dict = {
   'frag.investTipNow': 'ahora',
   'frag.investTipAfter': 'después',
   'frag.investTipSaved': 'ahorra',
+  'frag.investTipDelayed': 'retrasa',
+  'frag.investTipUnits': 'compra',
   'frag.investTipNoChange': 'sin cambio',
   'frag.investTipBecomes': 'pasa a ser alcanzable',
+  'frag.investTipCantAfford': 'saldo insuficiente',
   'frag.investTipReady': 'Siguiente generador ya listo',
   'frag.investTipUnknown': 'Sin estimación de desbloqueo',
 

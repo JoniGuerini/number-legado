@@ -47,8 +47,11 @@ export const en: Dict = {
   'frag.investTipNow': 'now',
   'frag.investTipAfter': 'after',
   'frag.investTipSaved': 'saves',
+  'frag.investTipDelayed': 'delays',
+  'frag.investTipUnits': 'buys',
   'frag.investTipNoChange': 'no change',
   'frag.investTipBecomes': 'becomes reachable',
+  'frag.investTipCantAfford': 'not enough balance',
   'frag.investTipReady': 'Next generator already ready',
   'frag.investTipUnknown': 'No unlock estimate',
 

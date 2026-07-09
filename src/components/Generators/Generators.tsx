@@ -691,61 +691,132 @@ export default function Generators({
   const nextUnlockCost =
     nextLockedIdx >= 0 ? costOf(nextLockedIdx, 0) : null;
 
-  /** Conteúdo do tooltip do botão investir: quanto o próximo desbloqueio
-      encolhe se este gerador ganhar +1 nível agora. Recalcula a cada hover
-      (sem cache) pra o tempo acompanhar a produção em andamento. */
-  const investTooltip = (
-    i: number
-  ): {
+  type TipKind = 'boost' | 'buy1' | 'buyMax';
+  type TipContent = {
     title: string;
     now?: string;
     after?: string;
     saved?: string;
+    delayed?: string;
     note?: string;
-  } => {
+    /** Só no máx: quantas unidades a compra cobre. */
+    units?: number;
+  };
+
+  /** Estado do jogo após a ação do tooltip (sem mutar o real). */
+  const previewAfter = (
+    i: number,
+    kind: TipKind
+  ): { game: Game; units?: number } | null => {
+    if (kind === 'boost') {
+      return {
+        game: {
+          ...game,
+          gens: game.gens.map((g, j) =>
+            j === i ? { ...g, boost: g.boost + 1 } : g
+          ),
+        },
+      };
+    }
+    if (kind === 'buy1') {
+      const cost = costOf(i, game.gens[i].bought);
+      if (game.base.lt(cost)) return null;
+      return {
+        units: 1,
+        game: {
+          ...game,
+          base: game.base.sub(cost),
+          gens: game.gens.map((g, j) =>
+            j === i
+              ? { ...g, bought: g.bought + 1, amount: g.amount.add(1) }
+              : g
+          ),
+        },
+      };
+    }
+    // buyMax
+    const { count, total } = maxBuyOf(i, game.gens[i].bought, game.base);
+    if (count <= 0) return null;
+    return {
+      units: count,
+      game: {
+        ...game,
+        base: game.base.sub(total),
+        gens: game.gens.map((g, j) =>
+          j === i
+            ? {
+                ...g,
+                bought: g.bought + count,
+                amount: g.amount.add(count),
+              }
+            : g
+        ),
+      },
+    };
+  };
+
+  /** Tooltip agora/depois/economiza (ou atrasa) pro próximo desbloqueio. */
+  const actionTooltip = (i: number, kind: TipKind): TipContent => {
+    const maxUnits =
+      kind === 'buyMax'
+        ? maxBuyOf(i, game.gens[i].bought, game.base).count
+        : undefined;
+    const withUnits = (tip: TipContent): TipContent =>
+      maxUnits !== undefined ? { ...tip, units: maxUnits } : tip;
+
     if (nextLockedIdx < 0 || nextUnlockCost === null) {
-      return { title: t('frag.investTipReady') };
+      return withUnits({ title: t('frag.investTipReady') });
     }
 
     const nowS = timeToUnlock(game, nextUnlockCost);
-    const boosted: Game = {
-      ...game,
-      gens: game.gens.map((g, j) =>
-        j === i ? { ...g, boost: g.boost + 1 } : g
-      ),
-    };
-    const afterS = timeToUnlock(boosted, nextUnlockCost);
+    const preview = previewAfter(i, kind);
+    if (!preview) {
+      return withUnits({
+        title: t('frag.investTipTitle'),
+        note: t('frag.investTipCantAfford'),
+        units: 0,
+      });
+    }
+    const afterS = timeToUnlock(preview.game, nextUnlockCost);
 
-    if (nowS === 0) return { title: t('frag.investTipReady') };
+    if (nowS === 0) return withUnits({ title: t('frag.investTipReady') });
     if (nowS === null && afterS === null) {
-      return { title: t('frag.investTipUnknown') };
+      return withUnits({ title: t('frag.investTipUnknown') });
     }
     if (nowS === null && afterS !== null) {
-      return {
+      return withUnits({
         title: t('frag.investTipTitle'),
         after: fmtTime(afterS),
         note: t('frag.investTipBecomes'),
-      };
+      });
     }
     if (nowS !== null && afterS === null) {
-      return { title: t('frag.investTipUnknown') };
+      return withUnits({ title: t('frag.investTipUnknown') });
     }
 
-    const saved = Math.max((nowS as number) - (afterS as number), 0);
-    if (saved < 0.5) {
-      return {
+    const delta = (nowS as number) - (afterS as number);
+    if (Math.abs(delta) < 0.5) {
+      return withUnits({
         title: t('frag.investTipTitle'),
         now: fmtTime(nowS!),
         after: fmtTime(afterS!),
         note: t('frag.investTipNoChange'),
-      };
+      });
     }
-    return {
+    if (delta > 0) {
+      return withUnits({
+        title: t('frag.investTipTitle'),
+        now: fmtTime(nowS!),
+        after: fmtTime(afterS!),
+        saved: fmtTime(delta),
+      });
+    }
+    return withUnits({
       title: t('frag.investTipTitle'),
       now: fmtTime(nowS!),
       after: fmtTime(afterS!),
-      saved: fmtTime(saved),
-    };
+      delayed: fmtTime(-delta),
+    });
   };
 
   const tipWithNums = (text: string) =>
@@ -759,26 +830,28 @@ export default function Generators({
       )
     );
 
-  // Tooltip do investir: portal no body (a lista tem overflow e cortaria
-  // um ::after absoluto; botão disabled também não recebe :hover confiável).
-  // Guarda só o índice + âncora — o conteúdo é recalculado a cada render
-  // com o estado atual, então investir com o mouse parado já atualiza.
-  const [investTip, setInvestTip] = useState<{
+  // Tooltip de ação: portal no body. Guarda só índice/tipo + âncora —
+  // o conteúdo recalcula a cada render (compra/investir com mouse parado).
+  const [actionTip, setActionTip] = useState<{
     i: number;
+    kind: TipKind;
     x: number;
     y: number;
   } | null>(null);
 
-  const showInvestTip = (el: HTMLElement, i: number) => {
+  const showActionTip = (el: HTMLElement, i: number, kind: TipKind) => {
     const r = el.getBoundingClientRect();
-    setInvestTip({
+    setActionTip({
       i,
+      kind,
       x: r.left + r.width / 2,
       y: r.top,
     });
   };
-  const hideInvestTip = () => setInvestTip(null);
-  const tipContent = investTip ? investTooltip(investTip.i) : null;
+  const hideActionTip = () => setActionTip(null);
+  const tipContent = actionTip
+    ? actionTooltip(actionTip.i, actionTip.kind)
+    : null;
 
   // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo)
   const virtual = useVirtualRows(listRef, game.gens.length, 8);
@@ -956,7 +1029,7 @@ export default function Generators({
         <div
           className={styles.list}
           ref={listRef}
-          onScroll={hideInvestTip}
+          onScroll={hideActionTip}
         >
           {game.gens.map((gen, i) => {
           if (i < virtual.first || i > virtual.last) {
@@ -1066,8 +1139,10 @@ export default function Generators({
               <div className={styles.actions}>
                 <div
                   className={styles.actionsTray}
-                  onPointerEnter={(e) => showInvestTip(e.currentTarget, i)}
-                  onPointerLeave={hideInvestTip}
+                  onPointerEnter={(e) =>
+                    showActionTip(e.currentTarget, i, 'boost')
+                  }
+                  onPointerLeave={hideActionTip}
                 >
                   <button
                     className={`btn-secondary ${styles.boostBtn}`}
@@ -1082,7 +1157,13 @@ export default function Generators({
                   </button>
                 </div>
 
-                <div className={styles.actionsTray}>
+                <div
+                  className={styles.actionsTray}
+                  onPointerEnter={(e) =>
+                    showActionTip(e.currentTarget, i, 'buy1')
+                  }
+                  onPointerLeave={hideActionTip}
+                >
                   <button
                     className="btn-primary"
                     disabled={isAuto || game.base.lt(cost)}
@@ -1092,7 +1173,13 @@ export default function Generators({
                   </button>
                 </div>
 
-                <div className={styles.actionsTray}>
+                <div
+                  className={styles.actionsTray}
+                  onPointerEnter={(e) =>
+                    showActionTip(e.currentTarget, i, 'buyMax')
+                  }
+                  onPointerLeave={hideActionTip}
+                >
                   <button
                     className={`btn-primary ${styles.buyMaxBtn}`}
                     disabled={isAuto || maxBuy.count <= 0}
@@ -1125,14 +1212,24 @@ export default function Generators({
         </div>
       </div>
 
-      {investTip && tipContent &&
+      {actionTip && tipContent &&
         createPortal(
           <div
             className={styles.investTip}
-            style={{ left: investTip.x, top: investTip.y }}
+            style={{ left: actionTip.x, top: actionTip.y }}
             role="tooltip"
           >
             <span className={styles.investTipTitle}>{tipContent.title}</span>
+            {tipContent.units !== undefined && tipContent.units > 0 && (
+              <div className={`${styles.investTipCard} ${styles.investTipUnits}`}>
+                <span className={styles.investTipLabel}>
+                  {t('frag.investTipUnits')}
+                </span>
+                <span className={styles.investTipValue}>
+                  {tipWithNums(fmt(tipContent.units))}
+                </span>
+              </div>
+            )}
             {(tipContent.now || tipContent.after) && (
               <div className={styles.investTipRow}>
                 {tipContent.now && (
@@ -1164,6 +1261,18 @@ export default function Generators({
                 </span>
                 <span className={styles.investTipValue}>
                   −{tipWithNums(tipContent.saved)}
+                </span>
+              </div>
+            )}
+            {tipContent.delayed && (
+              <div
+                className={`${styles.investTipCard} ${styles.investTipDelay}`}
+              >
+                <span className={styles.investTipLabel}>
+                  {t('frag.investTipDelayed')}
+                </span>
+                <span className={styles.investTipValue}>
+                  +{tipWithNums(tipContent.delayed)}
                 </span>
               </div>
             )}
