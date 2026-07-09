@@ -853,8 +853,12 @@ export default function Generators({
     ? actionTooltip(actionTip.i, actionTip.kind)
     : null;
 
-  // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo)
-  const virtual = useVirtualRows(listRef, game.gens.length, 8);
+  // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo).
+  // Só os geradores já comprados entram na lista rolável — o próximo bloqueado
+  // fica fixo no rodapé (fora do scroll).
+  const unlockedCount =
+    nextLockedIdx < 0 ? game.gens.length : nextLockedIdx;
+  const virtual = useVirtualRows(listRef, unlockedCount, 8);
 
   // Tela de escolha de modo (aparece com save resetado / pós-prestígio)
   if (!game.started) {
@@ -1016,6 +1020,7 @@ export default function Generators({
         )}
 
         <div className={styles.listWrap}>
+        <div className={styles.listPane}>
         {edges.above && (
           <button
             className={`${styles.fade} ${styles.fadeTop}`}
@@ -1031,7 +1036,7 @@ export default function Generators({
           ref={listRef}
           onScroll={hideActionTip}
         >
-          {game.gens.map((gen, i) => {
+          {Array.from({ length: unlockedCount }, (_, i) => {
           if (i < virtual.first || i > virtual.last) {
             return (
               <div
@@ -1043,42 +1048,9 @@ export default function Generators({
             );
           }
 
+          const gen = game.gens[i];
           const cost = costOf(i, gen.bought);
           const target = i === 0 ? 'base' : `${i}`;
-
-          // Gerador recém-desbloqueado (nunca comprado): só o botão, com barra
-          // de progresso, % à esquerda, custo no centro e timer à direita.
-          if (gen.bought === 0) {
-            const progress = Math.min(dispBase.div(cost).toNumber(), 1);
-            const etaAt = progress >= 1 ? null : unlockEtaAt(i, cost);
-            const etaText =
-              progress >= 1
-                ? t('gen.unlockReady')
-                : etaAt === null
-                  ? '—'
-                  : fmtTime(Math.max((etaAt - Date.now()) / 1000, 0));
-            return (
-              <button
-                key={i}
-                className={`btn-primary ${styles.progressBtn} ${styles.unlockBtn}`}
-                disabled={isAuto || progress < 1}
-                onClick={() => buy(i)}
-              >
-                <span
-                  className={styles.progressFill}
-                  style={{ width: `${progress * 100}%` }}
-                  aria-hidden="true"
-                />
-                <span className={`${styles.progressMeta} ${styles.progressPct}`}>
-                  {(Math.floor(progress * 10000) / 100).toFixed(2)}%
-                </span>
-                <span className={styles.progressLabel}>{fmtCost(cost)}</span>
-                <span className={`${styles.progressMeta} ${styles.progressEta}`}>
-                  {etaText}
-                </span>
-              </button>
-            );
-          }
 
           // Fragmentos pendentes: rendimento dos marcos alcançados menos o dos
           // já resgatados (cada marco vale o dobro do anterior: 1, 2, 4, 8…).
@@ -1209,6 +1181,43 @@ export default function Generators({
               ↓
             </button>
           )}
+        </div>
+
+          {/* Próximo gerador bloqueado: fora da lista, fixo no rodapé */}
+          {nextLockedIdx >= 0 && (() => {
+            const i = nextLockedIdx;
+            const cost = costOf(i, 0);
+            const progress = Math.min(dispBase.div(cost).toNumber(), 1);
+            const etaAt = progress >= 1 ? null : unlockEtaAt(i, cost);
+            const etaText =
+              progress >= 1
+                ? t('gen.unlockReady')
+                : etaAt === null
+                  ? '—'
+                  : fmtTime(Math.max((etaAt - Date.now()) / 1000, 0));
+            return (
+              <div className={styles.unlockDock}>
+                <button
+                  className={`btn-primary ${styles.progressBtn} ${styles.unlockBtn}`}
+                  disabled={isAuto || progress < 1}
+                  onClick={() => buy(i)}
+                >
+                  <span
+                    className={styles.progressFill}
+                    style={{ width: `${progress * 100}%` }}
+                    aria-hidden="true"
+                  />
+                  <span className={`${styles.progressMeta} ${styles.progressPct}`}>
+                    {(Math.floor(progress * 10000) / 100).toFixed(2)}%
+                  </span>
+                  <span className={styles.progressLabel}>{fmtCost(cost)}</span>
+                  <span className={`${styles.progressMeta} ${styles.progressEta}`}>
+                    {etaText}
+                  </span>
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

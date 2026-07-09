@@ -225,6 +225,16 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+/* Área rolável + fades: o botão de desbloqueio fica fora, no rodapé */
+.listPane {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Única área rolável do app, com a barra invisível */
@@ -272,6 +282,11 @@
 .fadeBottom {
   bottom: 0;
   background: linear-gradient(to top, var(--bg) 25%, var(--bg-fade));
+}
+
+/* Próximo gerador bloqueado: fixo abaixo da lista, fora do scroll */
+.unlockDock {
+  flex-shrink: 0;
 }
 
 .row {
@@ -339,6 +354,8 @@
 
 .progressLabel {
   position: relative;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 /* % (esquerda) e timer (direita) do botão de desbloqueio */
@@ -444,6 +461,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+  /* Sufixos de fmt (aa, af…) ficam minúsculos como no display de recursos;
+     o uppercase dos .btn-* só vale pra rótulos de ação, não pra números. */
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 /* Par de botões investir + comprar, lado a lado na ponta direita da linha */
