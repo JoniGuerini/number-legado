@@ -33,7 +33,7 @@ export const pt = {
   'gen.colGen': 'gerador',
   'gen.colProduces': 'produz',
   'gen.colInvest': 'investir',
-  'gen.colLevel': 'nível',
+  'gen.colMult': 'multiplicador',
   'gen.colBuy': 'comprar',
   'gen.colBuyMax': 'máx',
   'gen.buyMaxBtn': '{cost}',

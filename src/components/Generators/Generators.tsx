@@ -761,12 +761,10 @@ export default function Generators({
 
   // Tooltip do investir: portal no body (a lista tem overflow e cortaria
   // um ::after absoluto; botão disabled também não recebe :hover confiável).
+  // Guarda só o índice + âncora — o conteúdo é recalculado a cada render
+  // com o estado atual, então investir com o mouse parado já atualiza.
   const [investTip, setInvestTip] = useState<{
-    title: string;
-    now?: string;
-    after?: string;
-    saved?: string;
-    note?: string;
+    i: number;
     x: number;
     y: number;
   } | null>(null);
@@ -774,12 +772,13 @@ export default function Generators({
   const showInvestTip = (el: HTMLElement, i: number) => {
     const r = el.getBoundingClientRect();
     setInvestTip({
-      ...investTooltip(i),
+      i,
       x: r.left + r.width / 2,
       y: r.top,
     });
   };
   const hideInvestTip = () => setInvestTip(null);
+  const tipContent = investTip ? investTooltip(investTip.i) : null;
 
   // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo)
   const virtual = useVirtualRows(listRef, game.gens.length, 8);
@@ -915,7 +914,7 @@ export default function Generators({
           <span className={styles.headerCell}>{t('gen.colGen')}</span>
           <span className={styles.headerCell}>{t('gen.owns')}</span>
           <span className={styles.headerCell}>{t('gen.colProduces')}</span>
-          <span className={styles.headerCell}>{t('gen.colLevel')}</span>
+          <span className={styles.headerCell}>{t('gen.colMult')}</span>
           <span className={styles.headerCell}>
             {t('frag.next')}
             {/* Com 2+ geradores com pendência, atalho pra resgatar tudo */}
@@ -1040,8 +1039,10 @@ export default function Generators({
                 </div>
 
                 <div className={styles.stat}>
-                  <span className={styles.statLabel}>{t('gen.colLevel')}</span>
-                  <span className={styles.statValue}>{fmt(gen.boost)}</span>
+                  <span className={styles.statLabel}>{t('gen.colMult')}</span>
+                  <span className={styles.statValue}>
+                    ×{fmt(boostMultOf(gen.boost))}
+                  </span>
                 </div>
 
                 <div className={styles.stat}>
@@ -1124,50 +1125,50 @@ export default function Generators({
         </div>
       </div>
 
-      {investTip &&
+      {investTip && tipContent &&
         createPortal(
           <div
             className={styles.investTip}
             style={{ left: investTip.x, top: investTip.y }}
             role="tooltip"
           >
-            <span className={styles.investTipTitle}>{investTip.title}</span>
-            {(investTip.now || investTip.after) && (
+            <span className={styles.investTipTitle}>{tipContent.title}</span>
+            {(tipContent.now || tipContent.after) && (
               <div className={styles.investTipRow}>
-                {investTip.now && (
+                {tipContent.now && (
                   <div className={styles.investTipCard}>
                     <span className={styles.investTipLabel}>
                       {t('frag.investTipNow')}
                     </span>
                     <span className={styles.investTipValue}>
-                      {tipWithNums(investTip.now)}
+                      {tipWithNums(tipContent.now)}
                     </span>
                   </div>
                 )}
-                {investTip.after && (
+                {tipContent.after && (
                   <div className={styles.investTipCard}>
                     <span className={styles.investTipLabel}>
                       {t('frag.investTipAfter')}
                     </span>
                     <span className={styles.investTipValue}>
-                      {tipWithNums(investTip.after)}
+                      {tipWithNums(tipContent.after)}
                     </span>
                   </div>
                 )}
               </div>
             )}
-            {investTip.saved && (
+            {tipContent.saved && (
               <div className={`${styles.investTipCard} ${styles.investTipSave}`}>
                 <span className={styles.investTipLabel}>
                   {t('frag.investTipSaved')}
                 </span>
                 <span className={styles.investTipValue}>
-                  −{tipWithNums(investTip.saved)}
+                  −{tipWithNums(tipContent.saved)}
                 </span>
               </div>
             )}
-            {investTip.note && (
-              <span className={styles.investTipNote}>{investTip.note}</span>
+            {tipContent.note && (
+              <span className={styles.investTipNote}>{tipContent.note}</span>
             )}
           </div>,
           document.body

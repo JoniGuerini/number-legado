@@ -27,7 +27,7 @@ export const es: Dict = {
   'gen.colGen': 'generador',
   'gen.colProduces': 'produce',
   'gen.colInvest': 'invertir',
-  'gen.colLevel': 'nivel',
+  'gen.colMult': 'multiplicador',
   'gen.colBuy': 'comprar',
   'gen.colBuyMax': 'máx',
   'gen.buyMaxBtn': '{cost}',
