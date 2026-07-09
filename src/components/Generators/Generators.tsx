@@ -1276,7 +1276,13 @@ export default function Generators({
               : cost;
 
           return (
-            <div key={i} className={styles.row} ref={virtual.measureRef}>
+            <div
+              key={i}
+              className={styles.row}
+              // Só a primeira linha visível serve de régua: medir todas com
+              // alturas divergentes gerava loop infinito de setState (#185).
+              ref={i === virtual.first ? virtual.measureRef : undefined}
+            >
               <span className={styles.genName}>{i + 1}</span>
 
               <div className={styles.statsRow}>

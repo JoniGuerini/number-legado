@@ -1,4 +1,4 @@
-import { useState, type RefObject } from 'react';
+import { useRef, type RefObject } from 'react';
 
 /**
  * Janela virtual para listas de linhas uniformes que re-renderizam a cada
@@ -9,6 +9,11 @@ import { useState, type RefObject } from 'react';
  * Lê scrollTop/clientHeight direto do ref durante o render: como os
  * componentes de jogo re-renderizam todo frame (extrapolação visual), o
  * recorte se mantém fresco sem listeners próprios.
+ *
+ * A altura medida vive num ref (NUNCA em estado): com linhas de alturas
+ * ligeiramente diferentes (texto quebrado no mobile), medir via setState
+ * fazia cada linha "corrigir" a das outras em loop infinito (React #185).
+ * O valor entra em vigor no próximo re-render natural (todo frame).
  */
 export function useVirtualRows(
   listRef: RefObject<HTMLDivElement>,
@@ -17,15 +22,16 @@ export function useVirtualRows(
   estimateRowPx = 80,
   overscan = 6
 ) {
-  const [rowHeight, setRowHeight] = useState(estimateRowPx);
+  const rowHeightRef = useRef(estimateRowPx);
 
   /** Callback ref para linhas reais: mede a altura de verdade do card. */
   const measureRef = (el: HTMLElement | null) => {
     if (!el) return;
     const h = el.getBoundingClientRect().height;
-    if (h > 0 && Math.abs(h - rowHeight) > 0.5) setRowHeight(h);
+    if (h > 0) rowHeightRef.current = h;
   };
 
+  const rowHeight = rowHeightRef.current;
   const el = listRef.current;
   const top = el?.scrollTop ?? 0;
   const viewH = el?.clientHeight ?? 0;
