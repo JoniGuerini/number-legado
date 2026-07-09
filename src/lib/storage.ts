@@ -172,7 +172,11 @@ export function loadSave<T>(key: string): T | null {
 }
 
 export function writeSave(key: string, data: unknown): void {
-  localStorage.setItem(key, JSON.stringify(data));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch {
+    // QuotaExceeded / private mode no iOS — não derruba a UI
+  }
 }
 
 export function clearSave(key: string): void {

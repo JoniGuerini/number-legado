@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { History, Settings as SettingsIcon } from 'lucide-react';
+import { History, Settings as SettingsIcon, Swords } from 'lucide-react';
 import Generators from './components/Generators/Generators';
 import Activity from './components/Activity/Activity';
+import Combat from './components/Combat/Combat';
 import Settings from './components/Settings/Settings';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import FpsMeter, { VersionBadge } from './components/FpsMeter/FpsMeter';
 import FullscreenToggle from './components/FullscreenToggle/FullscreenToggle';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -21,11 +23,11 @@ import {
 import styles from './App.module.css';
 
 export type GameTab = 'geradores';
-type Page = GameTab | 'atividade';
+type Page = GameTab | 'atividade' | 'combate';
 
 /* A última página visitada sobrevive ao refresh */
 const PAGE_KEY = 'number-legado:page';
-const PAGES: Page[] = ['geradores', 'atividade'];
+const PAGES: Page[] = ['geradores', 'atividade', 'combate'];
 
 function readStoredPage(): Page {
   try {
@@ -162,7 +164,7 @@ export default function App() {
   return (
     <div className={styles.frame}>
       {/* Fileira de controles do topo-direito: telemetria, fullscreen,
-          Atividade e Config — ícones colados na borda */}
+          Atividade, Combate e Config — ícones colados na borda */}
       <div className={styles.topRight}>
         <FpsMeter />
         <FullscreenToggle />
@@ -177,6 +179,18 @@ export default function App() {
           title={t('nav.atividade')}
         >
           <History className={styles.cornerIcon} aria-hidden="true" />
+        </button>
+        <button
+          className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${page === 'combate' && !settingsOpen ? styles.cornerBtnOn : ''}`}
+          onClick={() => {
+            setSettingsOpen(false);
+            setPage((p) => (p === 'combate' ? 'geradores' : 'combate'));
+          }}
+          aria-label={t('nav.combate')}
+          aria-pressed={page === 'combate' && !settingsOpen}
+          title={t('nav.combate')}
+        >
+          <Swords className={styles.cornerIcon} aria-hidden="true" />
         </button>
         <button
           className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${settingsOpen ? styles.cornerBtnOn : ''}`}
@@ -196,23 +210,34 @@ export default function App() {
       </div>
 
       {/* As telas ficam sempre montadas para o progresso não resetar ao trocar de aba. */}
-      <main
-        className={`${styles.contentFull} ${page !== 'geradores' ? styles.hidden : ''}`}
+      <ErrorBoundary
+        message={t('crash.message')}
+        reloadLabel={t('crash.reload')}
       >
-        <Generators
-          key={`${slotEpoch}:${resetKeys.geradores}`}
-          cornerHost={page === 'geradores' ? topLeftEl : null}
-        />
-      </main>
-      <main
-        className={`${styles.contentFull} ${page !== 'atividade' ? styles.hidden : ''}`}
-      >
-        {/* Remonta ao zerar o jogo (ou trocar de slot) para o log acompanhar */}
-        <Activity
-          key={`${slotEpoch}:${resetKeys.geradores}`}
-          onNavigate={setPage}
-        />
-      </main>
+        <main
+          className={`${styles.contentFull} ${page !== 'geradores' ? styles.hidden : ''}`}
+        >
+          <Generators
+            key={`${slotEpoch}:${resetKeys.geradores}`}
+            cornerHost={page === 'geradores' ? topLeftEl : null}
+            active={page === 'geradores'}
+          />
+        </main>
+        <main
+          className={`${styles.contentFull} ${page !== 'atividade' ? styles.hidden : ''}`}
+        >
+          {/* Remonta ao zerar o jogo (ou trocar de slot) para o log acompanhar */}
+          <Activity
+            key={`${slotEpoch}:${resetKeys.geradores}`}
+            onNavigate={setPage}
+          />
+        </main>
+        <main
+          className={`${styles.contentFull} ${page !== 'combate' ? styles.hidden : ''}`}
+        >
+          <Combat />
+        </main>
+      </ErrorBoundary>
 
       {/* Rodapé: atalhos do botão comprar (só na tela de geradores) */}
       {page === 'geradores' && (

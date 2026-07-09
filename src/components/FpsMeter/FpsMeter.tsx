@@ -128,7 +128,7 @@ export default function FpsMeter() {
   const prefs = useSyncExternalStore(subscribeVideoPrefs, getVideoPrefs);
 
   useEffect(() => {
-    let rafId: number;
+    let rafId = 0;
     let frames = 0;
     let maxDelta = 0;
     let windowStart = performance.now();
@@ -156,8 +156,30 @@ export default function FpsMeter() {
       rafId = requestAnimationFrame(tick);
     };
 
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    const start = () => {
+      if (rafId) return;
+      windowStart = performance.now();
+      lastFrame = windowStart;
+      frames = 0;
+      maxDelta = 0;
+      rafId = requestAnimationFrame(tick);
+    };
+    const stop = () => {
+      if (!rafId) return;
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') start();
+      else stop();
+    };
+
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   return (

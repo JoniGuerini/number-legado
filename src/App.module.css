@@ -104,8 +104,8 @@
 }
 
 /* ===== Fileira de controles do topo-direito =====
-   Um único container fixo alinha telemetria, fullscreen, Atividade e Config —
-   sem aritmética de offsets fixos por elemento. */
+   Um único container fixo alinha telemetria, fullscreen, Atividade, Combate
+   e Config — sem aritmética de offsets fixos por elemento. */
 .topRight {
   position: fixed;
   top: 8px;

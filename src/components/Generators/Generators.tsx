@@ -320,9 +320,21 @@ function timeToUnlock(game: Game, cost: Decimal): number | null {
 const SIM_STEP_S = 0.25;
 /** Produção por unidade em um passo (0.1/s × 0.25s). */
 const PROD_PER_STEP = PROD_PER_UNIT.mul(SIM_STEP_S);
-/** Teto de passos executados por frame durante o catch-up, pra não travar a
-    UI ao reabrir (2h fechada ≈ 29k passos → alcança em ~15 frames). */
-const MAX_STEPS_PER_FRAME = 2_000;
+/** Teto de passos por frame no catch-up. Mobile usa teto menor: 2000×Decimal
+    no iPhone derruba a aba do Safari. */
+const MAX_STEPS_PER_FRAME_DESKTOP = 2_000;
+const MAX_STEPS_PER_FRAME_MOBILE = 400;
+
+function maxStepsPerFrame(): number {
+  if (typeof navigator === 'undefined') return MAX_STEPS_PER_FRAME_DESKTOP;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    ? MAX_STEPS_PER_FRAME_MOBILE
+    : MAX_STEPS_PER_FRAME_DESKTOP;
+}
+
+/** Intervalo mínimo entre re-renders cosméticos no mobile (~12 FPS de UI).
+    Desktop mantém 1 frame = 1 paint pra animação suave. */
+const UI_FRAME_MS_MOBILE = 80;
 
 /** Executa nSteps passos fixos de simulação. Função pura e determinística. */
 function advance(g: Game, nSteps: number): Game {
@@ -383,10 +395,13 @@ function advance(g: Game, nSteps: number): Game {
 
 export default function Generators({
   cornerHost,
+  active = true,
 }: {
   /** Fileira do topo-esquerdo do App onde o toggle de Automático é portalado
       (ao lado do card de versão, que empurra em vez de sobrepor). */
   cornerHost?: HTMLElement | null;
+  /** false = outra página visível: simula em background sem re-render cosmético. */
+  active?: boolean;
 }) {
   const { t } = useI18n();
   // Amarra a instância ao slot ativo do momento da montagem
@@ -515,26 +530,70 @@ export default function Generators({
     };
   }, []);
 
+  const activeRef = useRef(active);
+  activeRef.current = active;
+
   useEffect(() => {
-    let rafId: number;
+    let rafId = 0;
+    let lastUiPaint = 0;
+    const stepCap = maxStepsPerFrame();
+    const isMobile =
+      typeof navigator !== 'undefined' &&
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     // O relógio de parede dita quantos passos fixos já deveriam ter sido
     // executados desde o startedAt; o frame só corre atrás da diferença.
     // Estado = f(nº de passos) → determinístico entre máquinas e sessões.
-    const tick = () => {
+    //
+    // Estabilidade iOS: para o loop com a aba oculta; com outra página
+    // aberta só avança a simulação (sem bumpFrame); no mobile limita o
+    // paint cosmético pra ~12 FPS — o re-render 60×/s matava a aba.
+    const tick = (now: number) => {
+      let advanced = false;
       setGame((g) => {
         if (!g.started || g.startedAt === undefined) return g;
-        const target = Math.floor((Date.now() - g.startedAt) / (SIM_STEP_S * 1000));
-        const todo = Math.min(target - g.steps, MAX_STEPS_PER_FRAME);
-        return todo > 0 ? advance(g, todo) : g;
+        const target = Math.floor(
+          (Date.now() - g.startedAt) / (SIM_STEP_S * 1000)
+        );
+        const todo = Math.min(target - g.steps, stepCap);
+        if (todo <= 0) return g;
+        advanced = true;
+        return advance(g, todo);
       });
-      bumpFrame();
+
+      if (activeRef.current) {
+        const due =
+          !isMobile || now - lastUiPaint >= UI_FRAME_MS_MOBILE || advanced;
+        if (due) {
+          lastUiPaint = now;
+          bumpFrame();
+        }
+      }
 
       rafId = requestAnimationFrame(tick);
     };
 
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    const start = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(tick);
+    };
+    const stop = () => {
+      if (!rafId) return;
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') start();
+      else stop();
+    };
+
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   /** Compra `want` unidades (1 por padrão; atalhos usam 5/10/50/100).

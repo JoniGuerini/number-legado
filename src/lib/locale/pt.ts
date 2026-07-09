@@ -3,10 +3,31 @@
     compile time). */
 
 export const pt = {
-  // Navegação (topo: Atividade / Config; geradores = nome do modo)
+  // Navegação (topo: Atividade / Combate / Config; geradores = nome do modo)
   'nav.geradores': 'Geradores',
   'nav.atividade': 'Atividade',
+  'nav.combate': 'Combate',
   'nav.config': 'Configurações',
+
+  // Combate (protótipo turno a turno — visual sandbox)
+  'combat.playerName': 'Aventureiro',
+  'combat.enemyName': 'Sombra',
+  'combat.status.yourTurn': 'Seu turno',
+  'combat.status.enemyTurn': 'Turno inimigo',
+  'combat.status.won': 'Vitória',
+  'combat.status.lost': 'Derrota',
+  'combat.act.attack': 'Atacar',
+  'combat.act.heal': 'Curar',
+  'combat.act.defend': 'Defender',
+  'combat.again': 'De novo',
+  'combat.log.title': 'Log',
+  'combat.log.start': 'O combate começa.',
+  'combat.log.attack': '{actor} ataca {target} por {dmg}.',
+  'combat.log.heal': '{actor} recupera {heal} de vida.',
+  'combat.log.defend': '{actor} se prepara para defender.',
+  'combat.log.noMana': 'Mana insuficiente.',
+  'combat.log.won': 'Você venceu.',
+  'combat.log.lost': 'Você foi derrotado.',
 
   // Compartilhado
   'common.exportCsv': 'Exportar CSV',
@@ -15,6 +36,8 @@ export const pt = {
   'common.produced': 'produzido',
   'common.toStart': 'Ir para o começo',
   'common.toEnd': 'Ir para o fim',
+  'crash.message': 'Algo deu errado. Recarregue para continuar.',
+  'crash.reload': 'Recarregar',
 
   // Tela de escolha de modo
   'mode.title': 'Modo de jogo',
