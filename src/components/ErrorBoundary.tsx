@@ -54,6 +54,23 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           {this.props.reloadLabel}
         </button>
+        {/* Detalhe técnico pra diagnóstico em campo (mobile sem console) */}
+        <code
+          style={{
+            font: '400 10px/1.5 var(--mono)',
+            color: 'var(--ink-faint)',
+            maxWidth: 340,
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          {this.state.error.name}: {this.state.error.message}
+          {'\n'}
+          {(this.state.error.stack ?? '')
+            .split('\n')
+            .slice(1, 4)
+            .join('\n')}
+        </code>
       </div>
     );
   }
