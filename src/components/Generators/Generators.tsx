@@ -537,11 +537,14 @@ export default function Generators({
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  /** Compra até `want` unidades (1 por padrão; atalhos usam 5/10/50/100). */
+  /** Compra `want` unidades (1 por padrão; atalhos usam 5/10/50/100).
+      Com atalho, só compra o lote cheio — sem parcial. */
   const buy = (i: number, want = 1) => {
     setGame((g) => {
       const { count, total } = batchBuyOf(i, g.gens[i].bought, g.base, want);
       if (count <= 0) return g;
+      // Atalho: saldo insuficiente pro lote → não compra nada
+      if (want > 1 && count < want) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
       const wasLocked = gens[i].bought === 0;
@@ -789,7 +792,8 @@ export default function Generators({
         game.base,
         buyMult
       );
-      if (count <= 0) return null;
+      // Atalho: só previewa o lote cheio
+      if (count <= 0 || (buyMult > 1 && count < buyMult)) return null;
       return {
         units: count,
         game: {
@@ -846,8 +850,11 @@ export default function Generators({
     const nowS = timeToUnlock(game, nextUnlockCost);
     const preview = previewAfter(i, kind);
     if (!preview) {
-      // buy1 / buyMax sem saldo: quanto falta pra 1 unidade
-      const need = costOf(i, game.gens[i].bought);
+      // buy1 / buyMax sem saldo: quanto falta pro lote (ou 1 unidade)
+      const need =
+        kind === 'buy1' && buyMult > 1
+          ? totalCostOf(i, game.gens[i].bought, buyMult)
+          : costOf(i, game.gens[i].bought);
       const short = need.sub(game.base);
       return withUnits({
         title: t('frag.investTipTitle'),
@@ -1202,9 +1209,12 @@ export default function Generators({
             100
           );
           const maxBuy = maxBuyOf(i, gen.bought, game.base);
-          const batch = batchBuyOf(i, gen.bought, game.base, buyMult);
+          // Com atalho: sempre o custo do lote cheio (×5/×10…), não o parcial
+          // que o saldo cobre nem o preço unitário.
           const buyCost =
-            batch.count > 0 ? batch.total : costOf(i, gen.bought);
+            buyMult > 1
+              ? totalCostOf(i, gen.bought, buyMult)
+              : cost;
 
           return (
             <div key={i} className={styles.row} ref={virtual.measureRef}>
@@ -1280,7 +1290,7 @@ export default function Generators({
                 >
                   <button
                     className="btn-primary"
-                    disabled={isAuto || game.base.lt(cost)}
+                    disabled={isAuto || game.base.lt(buyCost)}
                     {...holdProps(() =>
                       buy(i, buyMultFromMods(modsRef.current))
                     )}

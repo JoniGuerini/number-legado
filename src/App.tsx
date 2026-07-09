@@ -75,13 +75,19 @@ export default function App() {
       down.delete(e.pointerId);
     };
 
+    // Sem menu de contexto do browser: Ctrl+clique / botão direito quebram a
+    // imersão (e atrapalham o atalho ×10 do botão comprar).
+    const onContextMenu = (e: Event) => e.preventDefault();
+
     document.addEventListener('pointerdown', onPointerDown, true);
     document.addEventListener('pointerup', onPointerUp, true);
     document.addEventListener('pointercancel', onPointerCancel, true);
+    document.addEventListener('contextmenu', onContextMenu, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
       document.removeEventListener('pointerup', onPointerUp, true);
       document.removeEventListener('pointercancel', onPointerCancel, true);
+      document.removeEventListener('contextmenu', onContextMenu, true);
     };
   }, []);
 
