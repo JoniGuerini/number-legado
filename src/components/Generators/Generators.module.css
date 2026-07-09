@@ -225,10 +225,9 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-/* Área rolável + fades: o botão de desbloqueio fica fora, no rodapé */
+/* Área rolável + fades */
 .listPane {
   position: relative;
   flex: 1;
@@ -284,9 +283,18 @@
   background: linear-gradient(to top, var(--bg) 25%, var(--bg-fade));
 }
 
-/* Próximo gerador bloqueado: fixo abaixo da lista, fora do scroll */
+/* Próximo gerador bloqueado: no fim da lista; sticky só “gruda” no rodapé
+   quando o conteúdo ultrapassa a área visível (sem rolagem, fica no fluxo). */
 .unlockDock {
   flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  /* Acima do fadeBottom (z-index 2) pra continuar clicável ao rolar */
+  z-index: 3;
+  /* Cancela o gap da lista e devolve 8px via padding — cobre cards por baixo */
+  margin-top: -8px;
+  padding-top: 8px;
+  background: var(--bg);
 }
 
 .row {

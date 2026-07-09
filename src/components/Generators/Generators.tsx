@@ -28,7 +28,7 @@ interface Game {
   base: Decimal;
   /** Total de base já produzido na vida do save (compras não descontam). */
   totalProduced: Decimal;
-  /** Recurso paralelo: 1 por marco de posse resgatado nos geradores. */
+  /** Recurso paralelo: cada marco rende o tier do gerador (G1→1, G2→2…). */
   fragments: number;
   gens: Gen[];
   mode: Mode;
@@ -189,18 +189,19 @@ function milestonesOf(amount: Decimal): number {
   return amount.mul(1 + 1e-9).log10().floor().toNumber();
 }
 
-/** Fragmentos acumulados pelos n primeiros marcos de um gerador. Cada marco
-    concede o dobro do anterior (1, 2, 4, 8…), então a soma fecha em 2^n − 1. */
-function fragmentsForMilestones(n: number): number {
-  return 2 ** n - 1;
+/** Fragmentos acumulados pelos n primeiros marcos do gerador de tier `tier`
+    (G1→1, G2→2…). Cada marco rende exatamente `tier` fragmentos. */
+function fragmentsForMilestones(n: number, tier: number): number {
+  return n * tier;
 }
 
 /** Fragmentos pendentes de resgate: o que os marcos alcançados renderam
     menos o que os marcos já resgatados renderam. */
-function pendingFragmentsOf(gen: Gen): number {
+function pendingFragmentsOf(gen: Gen, i: number): number {
+  const tier = i + 1;
   return (
-    fragmentsForMilestones(milestonesOf(gen.amount)) -
-    fragmentsForMilestones(gen.claimed)
+    fragmentsForMilestones(milestonesOf(gen.amount), tier) -
+    fragmentsForMilestones(gen.claimed, tier)
   );
 }
 
@@ -230,15 +231,15 @@ function highestUnlocked(gens: Gen[]): number {
   return max;
 }
 
-/** Faixa de 5 geradores: 1º prestígio no G5, 2º no G10, 3º no G15… */
-const PRESTIGE_GEN_STEP = 5;
+/** Faixa de 4 geradores: 1º prestígio no G4, 2º no G8, 3º no G12… */
+const PRESTIGE_GEN_STEP = 4;
 
 /** Gerador mínimo (1-based) pra prestigiar de novo, dado quantas vezes já prestigou. */
 function prestigeGateOf(prestigeCount: number): number {
   return PRESTIGE_GEN_STEP * (prestigeCount + 1);
 }
 
-/** Níveis ganhos ao prestigiar: floor(maiorGerador / 5) — G5–G9 → +1, G10–G14 → +2… */
+/** Níveis ganhos ao prestigiar: floor(maiorGerador / 4) — G4–G7 → +1, G8–G11 → +2… */
 function prestigeGainOf(gens: Gen[]): number {
   return Math.floor(highestUnlocked(gens) / PRESTIGE_GEN_STEP);
 }
@@ -519,7 +520,7 @@ export default function Generators({
   // (o rendimento dos marcos alcançados menos o dos já resgatados).
   const claim = (i: number) => {
     setGame((g) => {
-      const pending = pendingFragmentsOf(g.gens[i]);
+      const pending = pendingFragmentsOf(g.gens[i], i);
       if (pending <= 0) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
@@ -532,8 +533,8 @@ export default function Generators({
   const claimAll = () => {
     setGame((g) => {
       let total = 0;
-      const gens = g.gens.map((x) => {
-        const pending = pendingFragmentsOf(x);
+      const gens = g.gens.map((x, i) => {
+        const pending = pendingFragmentsOf(x, i);
         if (pending <= 0) return x;
         total += pending;
         return { ...x, claimed: milestonesOf(x.amount) };
@@ -854,11 +855,49 @@ export default function Generators({
     : null;
 
   // Cards fora da janela visível viram fantasmas (mesma altura, sem conteúdo).
-  // Só os geradores já comprados entram na lista rolável — o próximo bloqueado
-  // fica fixo no rodapé (fora do scroll).
+  // Só os geradores já comprados entram na virtualização — o próximo bloqueado
+  // fica no fim da lista (sticky no rodapé só quando há rolagem).
   const unlockedCount =
     nextLockedIdx < 0 ? game.gens.length : nextLockedIdx;
   const virtual = useVirtualRows(listRef, unlockedCount, 8);
+
+  const unlockRow =
+    nextLockedIdx >= 0
+      ? (() => {
+          const i = nextLockedIdx;
+          const cost = costOf(i, 0);
+          const progress = Math.min(dispBase.div(cost).toNumber(), 1);
+          const etaAt = progress >= 1 ? null : unlockEtaAt(i, cost);
+          const etaText =
+            progress >= 1
+              ? t('gen.unlockReady')
+              : etaAt === null
+                ? '—'
+                : fmtTime(Math.max((etaAt - Date.now()) / 1000, 0));
+          return (
+            <div className={styles.unlockDock}>
+              <button
+                className={`btn-primary ${styles.progressBtn} ${styles.unlockBtn}`}
+                disabled={isAuto || progress < 1}
+                onClick={() => buy(i)}
+              >
+                <span
+                  className={styles.progressFill}
+                  style={{ width: `${progress * 100}%` }}
+                  aria-hidden="true"
+                />
+                <span className={`${styles.progressMeta} ${styles.progressPct}`}>
+                  {(Math.floor(progress * 10000) / 100).toFixed(2)}%
+                </span>
+                <span className={styles.progressLabel}>{fmtCost(cost)}</span>
+                <span className={`${styles.progressMeta} ${styles.progressEta}`}>
+                  {etaText}
+                </span>
+              </button>
+            </div>
+          );
+        })()
+      : null;
 
   // Tela de escolha de modo (aparece com save resetado / pós-prestígio)
   if (!game.started) {
@@ -995,7 +1034,7 @@ export default function Generators({
           <span className={styles.headerCell}>
             {t('frag.next')}
             {/* Com 2+ geradores com pendência, atalho pra resgatar tudo */}
-            {game.gens.filter((x) => pendingFragmentsOf(x) > 0).length >= 2 && (
+            {game.gens.filter((x, i) => pendingFragmentsOf(x, i) > 0).length >= 2 && (
               <button
                 className={styles.claimAll}
                 onClick={claimAll}
@@ -1053,10 +1092,10 @@ export default function Generators({
           const target = i === 0 ? 'base' : `${i}`;
 
           // Fragmentos pendentes: rendimento dos marcos alcançados menos o dos
-          // já resgatados (cada marco vale o dobro do anterior: 1, 2, 4, 8…).
+          // já resgatados (cada marco rende o tier do gerador: G1→1, G2→2…).
           // Sem pendência, o chip vira medidor de progresso até o próximo marco
           // (próxima potência de 10 de posse) — mesmo tamanho, altura uniforme.
-          const pending = pendingFragmentsOf(gen);
+          const pending = pendingFragmentsOf(gen, i);
           const nextMilestone = Decimal.pow(10, milestonesOf(gen.amount) + 1);
           const fragPct = Math.min(
             dispAmount(i).div(nextMilestone).toNumber() * 100,
@@ -1170,6 +1209,7 @@ export default function Generators({
             </div>
           );
           })}
+          {unlockRow}
         </div>
 
           {edges.below && (
@@ -1182,42 +1222,6 @@ export default function Generators({
             </button>
           )}
         </div>
-
-          {/* Próximo gerador bloqueado: fora da lista, fixo no rodapé */}
-          {nextLockedIdx >= 0 && (() => {
-            const i = nextLockedIdx;
-            const cost = costOf(i, 0);
-            const progress = Math.min(dispBase.div(cost).toNumber(), 1);
-            const etaAt = progress >= 1 ? null : unlockEtaAt(i, cost);
-            const etaText =
-              progress >= 1
-                ? t('gen.unlockReady')
-                : etaAt === null
-                  ? '—'
-                  : fmtTime(Math.max((etaAt - Date.now()) / 1000, 0));
-            return (
-              <div className={styles.unlockDock}>
-                <button
-                  className={`btn-primary ${styles.progressBtn} ${styles.unlockBtn}`}
-                  disabled={isAuto || progress < 1}
-                  onClick={() => buy(i)}
-                >
-                  <span
-                    className={styles.progressFill}
-                    style={{ width: `${progress * 100}%` }}
-                    aria-hidden="true"
-                  />
-                  <span className={`${styles.progressMeta} ${styles.progressPct}`}>
-                    {(Math.floor(progress * 10000) / 100).toFixed(2)}%
-                  </span>
-                  <span className={styles.progressLabel}>{fmtCost(cost)}</span>
-                  <span className={`${styles.progressMeta} ${styles.progressEta}`}>
-                    {etaText}
-                  </span>
-                </button>
-              </div>
-            );
-          })()}
         </div>
       </div>
 

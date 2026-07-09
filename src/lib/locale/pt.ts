@@ -41,7 +41,7 @@ export const pt = {
   // Timer do botão de desbloqueio quando o custo já foi atingido
   'gen.unlockReady': 'Pronto',
 
-  // Fragmentos (recurso paralelo por marcos de posse: 10, 100, 1000…)
+  // Fragmentos (marcos 10/100/1000…; cada marco rende o tier do gerador)
   'frag.label': 'fragmentos',
   'frag.claimAria': 'Resgatar {n} fragmentos',
   'frag.next': 'próximo fragmento',
