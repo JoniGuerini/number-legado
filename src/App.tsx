@@ -37,9 +37,17 @@ function readStoredPage(): Page {
   return 'geradores';
 }
 
+/** macOS: mostra ⌘ no lugar de Alt nos cards de atalho (mesmo efeito). */
+function isApplePlatform(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+}
+
 export default function App() {
   useWakeLock();
   const { t } = useI18n();
+  const apple = isApplePlatform();
+  const mod5 = apple ? t('shortcut.cmd') : t('shortcut.alt');
 
   // Feedback sonoro global: um som ao pressionar qualquer botão habilitado e
   // outro (variação mais leve) ao soltar — sensação de tecla física.
@@ -199,6 +207,34 @@ export default function App() {
           onNavigate={setPage}
         />
       </main>
+
+      {/* Rodapé: atalhos do botão comprar (só na tela de geradores) */}
+      {page === 'geradores' && (
+        <footer className={styles.footer} aria-label={t('shortcut.aria')}>
+          <div className={styles.shortcutBar}>
+            <span className={styles.shortcutItem}>
+              <kbd className={styles.shortcutKey}>{mod5}</kbd>
+              <span className={styles.shortcutMult}>{t('shortcut.x5')}</span>
+            </span>
+            <span className={styles.shortcutItem}>
+              <kbd className={styles.shortcutKey}>{t('shortcut.ctrl')}</kbd>
+              <span className={styles.shortcutMult}>{t('shortcut.x10')}</span>
+            </span>
+            <span className={styles.shortcutItem}>
+              <kbd className={styles.shortcutKey}>{mod5}</kbd>
+              <span className={styles.shortcutPlus}>+</span>
+              <kbd className={styles.shortcutKey}>{t('shortcut.shift')}</kbd>
+              <span className={styles.shortcutMult}>{t('shortcut.x50')}</span>
+            </span>
+            <span className={styles.shortcutItem}>
+              <kbd className={styles.shortcutKey}>{t('shortcut.ctrl')}</kbd>
+              <span className={styles.shortcutPlus}>+</span>
+              <kbd className={styles.shortcutKey}>{t('shortcut.shift')}</kbd>
+              <span className={styles.shortcutMult}>{t('shortcut.x100')}</span>
+            </span>
+          </div>
+        </footer>
+      )}
 
       {settingsOpen && (
         <div

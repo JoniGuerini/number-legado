@@ -38,6 +38,22 @@ export const pt = {
   'gen.colBuyMax': 'máx',
   'gen.buyMaxBtn': '{cost}',
   'gen.buyMaxAria': 'Comprar {n} unidades por {cost}',
+  'gen.buyMultAria': 'Comprar até {n} unidades por {cost}',
+  // Atalhos do botão comprar (rodapé)
+  'shortcut.aria': 'Atalhos do botão comprar',
+  'shortcut.alt': 'Alt',
+  'shortcut.cmd': '⌘',
+  'shortcut.ctrl': 'Ctrl',
+  'shortcut.shift': 'Shift',
+  'shortcut.x5': '×5',
+  'shortcut.x10': '×10',
+  'shortcut.x50': '×50',
+  'shortcut.x100': '×100',
+  'gen.buyMaxWarnTitle': 'Pouca eficiência',
+  'gen.buyMaxWarnBody':
+    'O máx do gerador {n} compra {buy}, abaixo da produção do gerador {next} ({rate}/s).',
+  'gen.buyMaxWarnConfirm': 'Confirmar',
+  'gen.buyMaxWarnCancel': 'Voltar',
   // Timer do botão de desbloqueio quando o custo já foi atingido
   'gen.unlockReady': 'Pronto',
 
@@ -58,7 +74,7 @@ export const pt = {
   'frag.investTipUnits': 'compra',
   'frag.investTipNoChange': 'sem mudança',
   'frag.investTipBecomes': 'passa a ser alcançável',
-  'frag.investTipCantAfford': 'saldo insuficiente',
+  'frag.investTipCantAfford': 'faltam {need}',
   'frag.investTipReady': 'Próximo gerador já pronto',
   'frag.investTipUnknown': 'Sem previsão de desbloqueio',
 

@@ -181,6 +181,32 @@ function maxBuyOf(
   return { count: n, total: totalCostOf(i, bought, n) };
 }
 
+/** Compra em lote limitada pelo saldo: até `want` unidades. */
+function batchBuyOf(
+  i: number,
+  bought: number,
+  balance: Decimal,
+  want: number
+): { count: number; total: Decimal } {
+  if (want <= 0) return { count: 0, total: new Decimal(0) };
+  const max = maxBuyOf(i, bought, balance);
+  const count = Math.min(want, max.count);
+  if (count <= 0) return { count: 0, total: new Decimal(0) };
+  return { count, total: totalCostOf(i, bought, count) };
+}
+
+/** Multiplicador do botão de compra: Alt/⌘ → ×5, Ctrl → ×10;
+    +Shift → ×50 / ×100. Ctrl tem prioridade sobre Alt. */
+function buyMultFromMods(m: {
+  alt: boolean;
+  ctrl: boolean;
+  shift: boolean;
+}): number {
+  const base = m.ctrl ? 10 : m.alt ? 5 : 1;
+  if (base === 1) return 1;
+  return m.shift ? base * 10 : base;
+}
+
 /** Marcos de posse alcançados por um gerador: 1 ao possuir 10, 2 aos 100,
     3 aos 1.000… (floor do log10; o epsilon segura resíduo de ponto flutuante
     quando a quantidade encosta na potência exata). */
@@ -368,6 +394,40 @@ export default function Generators({
   const [game, setGame] = useState<Game>(() => loadGame(saveKey));
   // Confirmação em duas etapas do botão de prestígio
   const [confirmPrestige, setConfirmPrestige] = useState(false);
+  // MAX que compra menos que a prod/s do gerador seguinte → pede confirmação
+  const [confirmBuyMax, setConfirmBuyMax] = useState<number | null>(null);
+  useEffect(() => {
+    if (confirmBuyMax === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setConfirmBuyMax(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmBuyMax]);
+
+  // Atalhos do botão comprar: Alt/⌘ ×5, Ctrl ×10, +Shift ×50/×100
+  const [mods, setMods] = useState({ alt: false, ctrl: false, shift: false });
+  const modsRef = useRef(mods);
+  modsRef.current = mods;
+  useEffect(() => {
+    const sync = (e: KeyboardEvent) => {
+      setMods({
+        alt: e.altKey || e.metaKey,
+        ctrl: e.ctrlKey,
+        shift: e.shiftKey,
+      });
+    };
+    const clear = () => setMods({ alt: false, ctrl: false, shift: false });
+    window.addEventListener('keydown', sync);
+    window.addEventListener('keyup', sync);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('keydown', sync);
+      window.removeEventListener('keyup', sync);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
+  const buyMult = buyMultFromMods(mods);
   // Re-render a cada frame para a extrapolação visual (a simulação em si só
   // avança nos passos fixos — isto é pura cosmética de display).
   const [, bumpFrame] = useReducer((x: number) => x + 1, 0);
@@ -477,27 +537,30 @@ export default function Generators({
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  const buy = (i: number) => {
+  /** Compra até `want` unidades (1 por padrão; atalhos usam 5/10/50/100). */
+  const buy = (i: number, want = 1) => {
     setGame((g) => {
-      const cost = costOf(i, g.gens[i].bought);
-      if (g.base.lt(cost)) return g;
+      const { count, total } = batchBuyOf(i, g.gens[i].bought, g.base, want);
+      if (count <= 0) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
-      gens[i].bought += 1;
-      gens[i].amount = gens[i].amount.add(1);
-      if (gens[i].bought === 1) {
+      const wasLocked = gens[i].bought === 0;
+      gens[i].bought += count;
+      gens[i].amount = gens[i].amount.add(count);
+      if (wasLocked) {
         gens[i].unlockedAt = g.uptime;
         if (i > 0) gens[i].prevAtUnlock = gens[i - 1].amount;
       }
       // Primeira compra do último gerador desbloqueia o próximo.
       if (i === g.gens.length - 1) gens.push(newGen());
 
-      return { ...g, base: g.base.sub(cost), gens };
+      return { ...g, base: g.base.sub(total), gens };
     });
   };
 
   // Compra o máximo de unidades que o saldo atual cobre (série geométrica).
   const buyMax = (i: number) => {
+    setConfirmBuyMax(null);
     setGame((g) => {
       const { count, total } = maxBuyOf(i, g.gens[i].bought, g.base);
       if (count <= 0) return g;
@@ -720,16 +783,25 @@ export default function Generators({
       };
     }
     if (kind === 'buy1') {
-      const cost = costOf(i, game.gens[i].bought);
-      if (game.base.lt(cost)) return null;
+      const { count, total } = batchBuyOf(
+        i,
+        game.gens[i].bought,
+        game.base,
+        buyMult
+      );
+      if (count <= 0) return null;
       return {
-        units: 1,
+        units: count,
         game: {
           ...game,
-          base: game.base.sub(cost),
+          base: game.base.sub(total),
           gens: game.gens.map((g, j) =>
             j === i
-              ? { ...g, bought: g.bought + 1, amount: g.amount.add(1) }
+              ? {
+                  ...g,
+                  bought: g.bought + count,
+                  amount: g.amount.add(count),
+                }
               : g
           ),
         },
@@ -761,7 +833,9 @@ export default function Generators({
     const maxUnits =
       kind === 'buyMax'
         ? maxBuyOf(i, game.gens[i].bought, game.base).count
-        : undefined;
+        : kind === 'buy1' && buyMult > 1
+          ? batchBuyOf(i, game.gens[i].bought, game.base, buyMult).count
+          : undefined;
     const withUnits = (tip: TipContent): TipContent =>
       maxUnits !== undefined ? { ...tip, units: maxUnits } : tip;
 
@@ -772,9 +846,14 @@ export default function Generators({
     const nowS = timeToUnlock(game, nextUnlockCost);
     const preview = previewAfter(i, kind);
     if (!preview) {
+      // buy1 / buyMax sem saldo: quanto falta pra 1 unidade
+      const need = costOf(i, game.gens[i].bought);
+      const short = need.sub(game.base);
       return withUnits({
         title: t('frag.investTipTitle'),
-        note: t('frag.investTipCantAfford'),
+        note: t('frag.investTipCantAfford', {
+          need: fmtCost(short.gt(0) ? short : need),
+        }),
         units: 0,
       });
     }
@@ -839,6 +918,27 @@ export default function Generators({
     x: number;
     y: number;
   } | null>(null);
+
+  /** MAX do gerador i compra menos unidades que o i+1 já produz por segundo. */
+  const buyMaxIsWasteful = (i: number, count: number): boolean => {
+    if (count <= 0) return false;
+    const next = game.gens[i + 1];
+    if (!next || next.amount.lte(0)) return false;
+    const nextRate = next.amount.mul(unitRate(i + 1));
+    return new Decimal(count).lt(nextRate);
+  };
+
+  // Clique no MAX: se não compensar, abre o modal; senão compra direto.
+  const requestBuyMax = (i: number) => {
+    const { count } = maxBuyOf(i, game.gens[i].bought, game.base);
+    if (count <= 0) return;
+    if (buyMaxIsWasteful(i, count)) {
+      setActionTip(null);
+      setConfirmBuyMax(i);
+      return;
+    }
+    buyMax(i);
+  };
 
   const showActionTip = (el: HTMLElement, i: number, kind: TipKind) => {
     const r = el.getBoundingClientRect();
@@ -1102,6 +1202,9 @@ export default function Generators({
             100
           );
           const maxBuy = maxBuyOf(i, gen.bought, game.base);
+          const batch = batchBuyOf(i, gen.bought, game.base, buyMult);
+          const buyCost =
+            batch.count > 0 ? batch.total : costOf(i, gen.bought);
 
           return (
             <div key={i} className={styles.row} ref={virtual.measureRef}>
@@ -1178,9 +1281,26 @@ export default function Generators({
                   <button
                     className="btn-primary"
                     disabled={isAuto || game.base.lt(cost)}
-                    {...holdProps(() => buy(i))}
+                    {...holdProps(() =>
+                      buy(i, buyMultFromMods(modsRef.current))
+                    )}
+                    aria-label={
+                      buyMult > 1
+                        ? t('gen.buyMultAria', {
+                            n: buyMult,
+                            cost: fmtCost(buyCost),
+                          })
+                        : undefined
+                    }
                   >
-                    {fmtCost(cost)}
+                    {buyMult > 1 ? (
+                      <>
+                        <span className={styles.buyMult}>×{buyMult}</span>
+                        {fmtCost(buyCost)}
+                      </>
+                    ) : (
+                      fmtCost(cost)
+                    )}
                   </button>
                 </div>
 
@@ -1194,7 +1314,7 @@ export default function Generators({
                   <button
                     className={`btn-primary ${styles.buyMaxBtn}`}
                     disabled={isAuto || maxBuy.count <= 0}
-                    onClick={() => buyMax(i)}
+                    onClick={() => requestBuyMax(i)}
                     aria-label={t('gen.buyMaxAria', {
                       n: maxBuy.count > 0 ? maxBuy.count : 1,
                       cost: fmtCost(maxBuy.count > 0 ? maxBuy.total : cost),
@@ -1292,6 +1412,61 @@ export default function Generators({
             {tipContent.note && (
               <span className={styles.investTipNote}>{tipContent.note}</span>
             )}
+          </div>,
+          document.body
+        )}
+
+      {confirmBuyMax !== null &&
+        createPortal(
+          <div
+            className={styles.confirmBackdrop}
+            onClick={() => setConfirmBuyMax(null)}
+          >
+            <div
+              className={styles.confirmModal}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="buyMaxConfirmTitle"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.confirmCopy}>
+                <h2 id="buyMaxConfirmTitle" className={styles.confirmTitle}>
+                  {t('gen.buyMaxWarnTitle')}
+                </h2>
+                <p className={styles.confirmBody}>
+                  {t('gen.buyMaxWarnBody', {
+                    n: confirmBuyMax + 1,
+                    buy: fmt(
+                      maxBuyOf(
+                        confirmBuyMax,
+                        game.gens[confirmBuyMax].bought,
+                        game.base
+                      ).count
+                    ),
+                    rate: fmtRate(
+                      game.gens[confirmBuyMax + 1].amount.mul(
+                        unitRate(confirmBuyMax + 1)
+                      )
+                    ),
+                    next: confirmBuyMax + 2,
+                  })}
+                </p>
+              </div>
+              <div className={styles.confirmActions}>
+                <button
+                  className={`btn-secondary ${styles.confirmBtn}`}
+                  onClick={() => setConfirmBuyMax(null)}
+                >
+                  {t('gen.buyMaxWarnCancel')}
+                </button>
+                <button
+                  className={`btn-primary ${styles.confirmBtn}`}
+                  onClick={() => buyMax(confirmBuyMax)}
+                >
+                  {t('gen.buyMaxWarnConfirm')}
+                </button>
+              </div>
+            </div>
           </div>,
           document.body
         )}

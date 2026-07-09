@@ -40,6 +40,55 @@
   display: none !important;
 }
 
+/* ===== Rodapé: atalhos soltos do botão comprar ===== */
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.shortcutBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 24px 96px;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 12px;
+}
+
+.shortcutItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shortcutKey {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 3px 6px;
+  background: var(--paper);
+  border-radius: 3px;
+  box-shadow: var(--card-edge-pill);
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.shortcutPlus {
+  font: 500 11px/1 var(--mono);
+  color: var(--ink-faint);
+}
+
+.shortcutMult {
+  font: 600 12px/1 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--brass-deep);
+}
+
 /* ===== Fileira do topo-esquerdo =====
    Versão + cardzinhos portalados pelos jogos (ex.: Automático). Flex com gap:
    quando o card de versão alarga (aviso de versão nova), empurra os vizinhos
@@ -166,5 +215,21 @@
     position: static;
     justify-content: center;
     flex-wrap: wrap;
+  }
+
+  .shortcutBar {
+    gap: 16px 48px;
+    padding: 6px 8px;
+    min-height: 32px;
+  }
+
+  .shortcutKey {
+    min-width: 22px;
+    padding: 2px 5px;
+    font-size: 10px;
+  }
+
+  .shortcutMult {
+    font-size: 11px;
   }
 }
