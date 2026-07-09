@@ -150,6 +150,37 @@ function costOf(i: number, bought: number): Decimal {
   );
 }
 
+/** Soma dos custos de `count` compras a partir de `bought` (série geométrica). */
+function totalCostOf(i: number, bought: number, count: number): Decimal {
+  if (count <= 0) return new Decimal(0);
+  const first = costOf(i, bought);
+  // first · (r^n − 1) / (r − 1)
+  return first
+    .mul(Decimal.pow(COST_GROWTH, count).sub(1))
+    .div(COST_GROWTH - 1);
+}
+
+/** Máximo de unidades compráveis com o saldo atual + custo total gasto. */
+function maxBuyOf(
+  i: number,
+  bought: number,
+  balance: Decimal
+): { count: number; total: Decimal } {
+  const first = costOf(i, bought);
+  if (balance.lt(first)) return { count: 0, total: new Decimal(0) };
+
+  // r^n ≤ 1 + balance·(r−1)/first  →  n = floor(log_r(...))
+  const ratio = balance.mul(COST_GROWTH - 1).div(first).add(1);
+  let n = Math.floor(ratio.log10().div(Math.log10(COST_GROWTH)).toNumber());
+  if (!Number.isFinite(n) || n < 1) n = 1;
+
+  // Ajuste fino por arredondamento do log
+  while (n > 0 && totalCostOf(i, bought, n).gt(balance)) n--;
+  while (totalCostOf(i, bought, n + 1).lte(balance)) n++;
+
+  return { count: n, total: totalCostOf(i, bought, n) };
+}
+
 /** Marcos de posse alcançados por um gerador: 1 ao possuir 10, 2 aos 100,
     3 aos 1.000… (floor do log10; o epsilon segura resíduo de ponto flutuante
     quando a quantidade encosta na potência exata). */
@@ -461,6 +492,26 @@ export default function Generators({
       if (i === g.gens.length - 1) gens.push(newGen());
 
       return { ...g, base: g.base.sub(cost), gens };
+    });
+  };
+
+  // Compra o máximo de unidades que o saldo atual cobre (série geométrica).
+  const buyMax = (i: number) => {
+    setGame((g) => {
+      const { count, total } = maxBuyOf(i, g.gens[i].bought, g.base);
+      if (count <= 0) return g;
+
+      const gens = g.gens.map((x) => ({ ...x }));
+      const wasLocked = gens[i].bought === 0;
+      gens[i].bought += count;
+      gens[i].amount = gens[i].amount.add(count);
+      if (wasLocked) {
+        gens[i].unlockedAt = g.uptime;
+        if (i > 0) gens[i].prevAtUnlock = gens[i - 1].amount;
+      }
+      if (i === g.gens.length - 1) gens.push(newGen());
+
+      return { ...g, base: g.base.sub(total), gens };
     });
   };
 
@@ -904,6 +955,9 @@ export default function Generators({
             <span className={`${styles.headerCell} ${styles.headerBuy}`}>
               {t('gen.colBuy')}
             </span>
+            <span className={`${styles.headerCell} ${styles.headerBuyMax}`}>
+              {t('gen.colBuyMax')}
+            </span>
           </div>
         </div>
         )}
@@ -983,6 +1037,7 @@ export default function Generators({
             dispAmount(i).div(nextMilestone).toNumber() * 100,
             100
           );
+          const maxBuy = maxBuyOf(i, gen.bought, game.base);
 
           return (
             <div key={i} className={styles.row} ref={virtual.measureRef}>
@@ -1052,6 +1107,22 @@ export default function Generators({
                     {...holdProps(() => buy(i))}
                   >
                     {fmtCost(cost)}
+                  </button>
+                </div>
+
+                <div className={styles.actionsTray}>
+                  <button
+                    className={`btn-primary ${styles.buyMaxBtn}`}
+                    disabled={isAuto || maxBuy.count <= 0}
+                    onClick={() => buyMax(i)}
+                    aria-label={t('gen.buyMaxAria', {
+                      n: maxBuy.count > 0 ? maxBuy.count : 1,
+                      cost: fmtCost(maxBuy.count > 0 ? maxBuy.total : cost),
+                    })}
+                  >
+                    {t('gen.buyMaxBtn', {
+                      cost: fmtCost(maxBuy.count > 0 ? maxBuy.total : cost),
+                    })}
                   </button>
                 </div>
               </div>

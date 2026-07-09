@@ -471,11 +471,19 @@
 .headerBuy {
   width: 132px;
 }
+.headerBuyMax {
+  width: 132px;
+}
 
 /* Investir fragmentos: mesmo porte do botão de comprar, tom secundário
    (btn-secondary) pra diferenciar do custo em número base */
 .row button.boostBtn {
   width: 110px;
+}
+
+/* Comprar máximo: mesma largura do comprar unitário */
+.row button.buyMaxBtn {
+  width: 120px;
 }
 
 /* Tooltip do investir: portal no body, layout em mini-cards */

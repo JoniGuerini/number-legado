@@ -35,6 +35,9 @@ export const pt = {
   'gen.colInvest': 'investir',
   'gen.colLevel': 'nível',
   'gen.colBuy': 'comprar',
+  'gen.colBuyMax': 'máx',
+  'gen.buyMaxBtn': '{cost}',
+  'gen.buyMaxAria': 'Comprar {n} unidades por {cost}',
   // Timer do botão de desbloqueio quando o custo já foi atingido
   'gen.unlockReady': 'Pronto',
 

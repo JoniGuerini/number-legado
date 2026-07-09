@@ -29,6 +29,9 @@ export const en: Dict = {
   'gen.colInvest': 'invest',
   'gen.colLevel': 'level',
   'gen.colBuy': 'buy',
+  'gen.colBuyMax': 'max',
+  'gen.buyMaxBtn': '{cost}',
+  'gen.buyMaxAria': 'Buy {n} units for {cost}',
   'gen.unlockReady': 'Ready',
   'gen.produces': 'produces {target}',
 
