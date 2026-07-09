@@ -8,18 +8,19 @@ English is the project's canonical language (docs, code, commit messages).
 The UI ships in English, Brazilian Portuguese and Spanish — see
 **Internationalization** below.
 
-## The tabs
+## Screens
 
 - **Generators** — a continuous production chain: generator N produces 0.1/s
   of level N−1 per unit, down to the base number, which buys new generators
   (cost `10^(i + 0.004·i²)`, doubling per purchase). Progressive unlocks, an
   automatic mode for balance testing and a cost progress bar.
-- **Activity** — the unlock log, with a summary header (total, play time,
-  average interval) and every timing explained, pace color-coded (slower in
-  red, faster in green).
-- **Settings** — tabbed configuration: save slots (create/load/rename/delete,
-  reset), color themes, button-click volume (Web Audio synthesized
-  press/release pair), telemetry toggles and UI language.
+- **Activity** — top-bar icon (next to Settings): the unlock log, with a
+  summary header (total, play time, average interval) and every timing
+  explained, pace color-coded (slower in red, faster in green).
+- **Settings** — top-bar gear icon; tabbed configuration: save slots
+  (create/load/rename/delete, reset), color themes, button-click volume
+  (Web Audio synthesized press/release pair), telemetry toggles and UI
+  language.
 
 ## Simulation architecture
 

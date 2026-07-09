@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { History, Settings as SettingsIcon } from 'lucide-react';
 import Generators from './components/Generators/Generators';
 import Activity from './components/Activity/Activity';
 import Settings from './components/Settings/Settings';
@@ -147,11 +147,23 @@ export default function App() {
 
   return (
     <div className={styles.frame}>
-      {/* Fileira de controles do topo-direito: telemetria, fullscreen e a
-          engrenagem de Config colada na borda */}
+      {/* Fileira de controles do topo-direito: telemetria, fullscreen,
+          Atividade e Config — ícones colados na borda */}
       <div className={styles.topRight}>
         <FpsMeter />
         <FullscreenToggle />
+        <button
+          className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${page === 'atividade' && !settingsOpen ? styles.cornerBtnOn : ''}`}
+          onClick={() => {
+            setSettingsOpen(false);
+            setPage((p) => (p === 'atividade' ? 'geradores' : 'atividade'));
+          }}
+          aria-label={t('nav.atividade')}
+          aria-pressed={page === 'atividade' && !settingsOpen}
+          title={t('nav.atividade')}
+        >
+          <History className={styles.cornerIcon} aria-hidden="true" />
+        </button>
         <button
           className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${settingsOpen ? styles.cornerBtnOn : ''}`}
           onClick={() => setSettingsOpen((o) => !o)}
@@ -187,23 +199,6 @@ export default function App() {
           onNavigate={setPage}
         />
       </main>
-
-      <footer className={styles.footer}>
-        <nav className={styles.tabs}>
-          {PAGES.map((p) => (
-            <button
-              key={p}
-              className={`${styles.tab} ${page === p && !settingsOpen ? styles.active : ''}`}
-              onClick={() => {
-                setSettingsOpen(false);
-                setPage(p);
-              }}
-            >
-              {t(`nav.${p}`)}
-            </button>
-          ))}
-        </nav>
-      </footer>
 
       {settingsOpen && (
         <div

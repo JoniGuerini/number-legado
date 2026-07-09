@@ -3,7 +3,7 @@
     compile time). */
 
 export const pt = {
-  // Navegação principal (rodapé)
+  // Navegação (topo: Atividade / Config; geradores = nome do modo)
   'nav.geradores': 'Geradores',
   'nav.atividade': 'Atividade',
   'nav.config': 'Configurações',

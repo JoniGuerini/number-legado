@@ -40,53 +40,6 @@
   display: none !important;
 }
 
-.footer {
-  position: sticky;
-  /* Sem offset extra: a distância do fundo fica igual ao padding do frame,
-     uniforme com as laterais */
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.tabs {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-  pointer-events: auto;
-}
-
-.tab {
-  flex: 1;
-  background: var(--paper);
-  border: none;
-  box-shadow: var(--card-edge);
-  border-radius: 4px;
-  padding: 12px 28px;
-  font: 500 13px var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
-}
-.tab:hover {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--card-edge-lg);
-}
-.tab:active {
-  box-shadow: var(--card-edge-press);
-  transform: translateY(1px);
-}
-
-.active,
-.active:hover {
-  background: var(--surface-deep);
-  color: var(--brass-deep);
-}
-
 /* ===== Fileira do topo-esquerdo =====
    Versão + cardzinhos portalados pelos jogos (ex.: Automático). Flex com gap:
    quando o card de versão alarga (aviso de versão nova), empurra os vizinhos
@@ -102,7 +55,7 @@
 }
 
 /* ===== Fileira de controles do topo-direito =====
-   Um único container fixo alinha telemetria, fullscreen e a engrenagem —
+   Um único container fixo alinha telemetria, fullscreen, Atividade e Config —
    sem aritmética de offsets fixos por elemento. */
 .topRight {
   position: fixed;
@@ -146,7 +99,7 @@
   background: var(--surface-deep);
   color: var(--brass-deep);
 }
-/* Variante só-ícone (engrenagem): quadrado compacto */
+/* Variante só-ícone (Atividade / Config): quadrado compacto */
 .cornerBtnSquare {
   width: 32px;
   padding: 0;
@@ -206,19 +159,8 @@
     padding: 8px;
   }
 
-  /* Mesma largura dos cards da lista */
-  .tabs {
-    width: 100%;
-  }
-  .tab {
-    flex: 1;
-    padding: 12px 2px;
-    font-size: 10px;
-    letter-spacing: 0.03em;
-  }
-
   /* No mobile as fileiras do topo entram no fluxo da página, centralizadas e
-     com quebra — Config e o Automático continuam acessíveis por aqui */
+     com quebra — Atividade, Config e o Automático continuam acessíveis */
   .topLeft,
   .topRight {
     position: static;
