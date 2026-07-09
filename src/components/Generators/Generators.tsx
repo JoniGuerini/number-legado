@@ -691,17 +691,9 @@ export default function Generators({
   const nextUnlockCost =
     nextLockedIdx >= 0 ? costOf(nextLockedIdx, 0) : null;
 
-  // Cache do ETA "se eu investir +1 neste gerador" — mesma assinatura do ETA
-  // atual, chaveado pelo índice do boost. Só recalcula no hover implícito
-  // (render dos cards visíveis) quando compras/boosts mudam.
-  const boostEtaCacheRef = useRef<{
-    signature: string;
-    nowS: number | null;
-    after: Map<number, number | null>;
-  }>({ signature: '', nowS: null, after: new Map() });
-
   /** Conteúdo do tooltip do botão investir: quanto o próximo desbloqueio
-      encolhe se este gerador ganhar +1 nível agora. */
+      encolhe se este gerador ganhar +1 nível agora. Recalcula a cada hover
+      (sem cache) pra o tempo acompanhar a produção em andamento. */
   const investTooltip = (
     i: number
   ): {
@@ -714,26 +706,15 @@ export default function Generators({
     if (nextLockedIdx < 0 || nextUnlockCost === null) {
       return { title: t('frag.investTipReady') };
     }
-    const signature =
-      `${game.prestigeLevels}|` +
-      game.gens.map((g) => `${g.bought}:${g.boost}`).join(',');
-    const cache = boostEtaCacheRef.current;
-    if (cache.signature !== signature) {
-      cache.signature = signature;
-      cache.nowS = timeToUnlock(game, nextUnlockCost);
-      cache.after = new Map();
-    }
-    if (!cache.after.has(i)) {
-      const boosted: Game = {
-        ...game,
-        gens: game.gens.map((g, j) =>
-          j === i ? { ...g, boost: g.boost + 1 } : g
-        ),
-      };
-      cache.after.set(i, timeToUnlock(boosted, nextUnlockCost));
-    }
-    const nowS = cache.nowS;
-    const afterS = cache.after.get(i) ?? null;
+
+    const nowS = timeToUnlock(game, nextUnlockCost);
+    const boosted: Game = {
+      ...game,
+      gens: game.gens.map((g, j) =>
+        j === i ? { ...g, boost: g.boost + 1 } : g
+      ),
+    };
+    const afterS = timeToUnlock(boosted, nextUnlockCost);
 
     if (nowS === 0) return { title: t('frag.investTipReady') };
     if (nowS === null && afterS === null) {
