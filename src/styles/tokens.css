@@ -159,31 +159,33 @@
 }
 
 /* ============================================================
-   TEMA: Verde musgo — base esverdeada escura com acento em
-   amarelo queimado (mostarda)
+   TEMA: Floresta — verdes de mata + accent marrom madeira
    ============================================================ */
-:root[data-theme='verde'] {
-  --bg: #0a0f0a;
-  --paper: #111811;
-  --surface: #192219;
-  --surface-hover: #212d21;
-  --surface-deep: #2b392b;
-  --bg-fade: rgba(10, 15, 10, 0);
+:root[data-theme='floresta'] {
+  --bg: #0a100c;
+  --paper: #121a14;
+  --surface: #1a241c;
+  --surface-hover: #223026;
+  --surface-deep: #2c3c30;
+  --bg-fade: rgba(10, 16, 12, 0);
 
-  /* Amarelo queimado assume o papel do latão */
-  --brass-light: #5a5230;
-  --brass: #8a7a3a;
-  --brass-deep: #cfa63a;
-  --brass-bright: #e0b84a;
+  /* Marrom madeira / terra — no lugar do latão */
+  --brass-light: #4a3424;
+  --brass: #8a5a38;
+  --brass-deep: #c48a5a;
+  --brass-bright: #d4a06e;
 
-  --ink: #dde3dd;
-  --ink-soft: #b2bcb2;
-  --ink-muted: #8b988b;
-  --ink-faint: #566056;
+  --ink: #dde6de;
+  --ink-soft: #b0bcb2;
+  --ink-muted: #87968c;
+  --ink-faint: #546058;
 
-  --border: #2b392b;
-  --border-soft: #1e291e;
-  --border-faint: #151d15;
+  --accent: #b05040;
+  --accent-deep: #8a3830;
+
+  --border: #2c3c30;
+  --border-soft: #1e2a20;
+  --border-faint: #141c16;
 }
 
 /* ============================================================
@@ -207,4 +209,171 @@
   --border-faint: #14181f;
 
   --bg-fade: rgba(12, 14, 18, 0);
+}
+
+/* ============================================================
+   TEMA: Oceano — carvão petróleo/teal + accent coral
+   ============================================================ */
+:root[data-theme='oceano'] {
+  --bg: #070d10;
+  --paper: #0f171c;
+  --surface: #172228;
+  --surface-hover: #1f2c34;
+  --surface-deep: #2a3a44;
+  --bg-fade: rgba(7, 13, 16, 0);
+
+  /* Coral — contraste quente sobre a base fria */
+  --brass-light: #5c3834;
+  --brass: #c06a5a;
+  --brass-deep: #e08a78;
+  --brass-bright: #f0a090;
+
+  --ink: #dce6ea;
+  --ink-soft: #aebcc4;
+  --ink-muted: #84949e;
+  --ink-faint: #526068;
+
+  --accent: #c45a4d;
+  --accent-deep: #9a3e34;
+
+  --border: #2a3a44;
+  --border-soft: #1a262c;
+  --border-faint: #121a1e;
+}
+
+/* ============================================================
+   TEMA: Ameixa — carvão vinho/púrpura + accent ouro champagne
+   ============================================================ */
+:root[data-theme='ameixa'] {
+  --bg: #0c0a10;
+  --paper: #15121c;
+  --surface: #1e1a28;
+  --surface-hover: #282232;
+  --surface-deep: #342e42;
+  --bg-fade: rgba(12, 10, 16, 0);
+
+  --brass-light: #5a4a28;
+  --brass: #a89048;
+  --brass-deep: #d4b85a;
+  --brass-bright: #e8cc6e;
+
+  --ink: #e6e2ec;
+  --ink-soft: #b8b2c4;
+  --ink-muted: #8e879c;
+  --ink-faint: #5a5468;
+
+  --accent: #b05070;
+  --accent-deep: #8a3854;
+
+  --border: #342e42;
+  --border-soft: #221e2c;
+  --border-faint: #18141e;
+}
+
+/* ============================================================
+   TEMA BÁSICO: Claro neutro — contraparte light do dark neutro
+   (cinzas puros, sem cast de cor; latão escurecido pra contraste)
+   ============================================================ */
+:root[data-theme='claro'] {
+  color-scheme: light;
+
+  --bg: #dedede;
+  --paper: #f4f4f4;
+  --surface: #eaeaea;
+  --surface-hover: #e0e0e0;
+  --surface-deep: #d2d2d2;
+  --bg-fade: rgba(222, 222, 222, 0);
+
+  /* Ardósia fria — contraste limpo no papel cinza, sem o amarelo tostado */
+  --brass-light: #b8c0cc;
+  --brass: #4a5a72;
+  --brass-deep: #2f3f58;
+  --brass-bright: #3d5270;
+
+  --ink: #262626;
+  --ink-soft: #464646;
+  --ink-muted: #6a6a6a;
+  --ink-faint: #989898;
+
+  --accent: #b04434;
+  --tier-startup: #2f7d3f;
+
+  --border: #bcbcbc;
+  --border-soft: #cccccc;
+  --border-faint: #d6d6d6;
+
+  --card-edge:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 1px 2px rgba(50, 50, 50, 0.2),
+    0 0 0 0.5px rgba(50, 50, 50, 0.13);
+
+  --card-edge-lg:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 6px 18px rgba(50, 50, 50, 0.18),
+    0 0 0 0.5px rgba(50, 50, 50, 0.13);
+
+  --card-edge-pill:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 1px 1px rgba(50, 50, 50, 0.16),
+    0 0 0 0.5px rgba(50, 50, 50, 0.13);
+
+  --card-edge-press:
+    inset 0 2px 4px rgba(50, 50, 50, 0.24),
+    0 0 0 0.5px rgba(50, 50, 50, 0.13);
+
+  --shadow-md: var(--card-edge-lg);
+  --shadow-lg: var(--card-edge-lg);
+}
+
+/* ============================================================
+   TEMA: Sálvia — papel verde-acinzentado + accent ameixa
+   ============================================================ */
+:root[data-theme='salvia'] {
+  color-scheme: light;
+
+  --bg: #d4ddd4;
+  --paper: #eaf0ea;
+  --surface: #e0e8e0;
+  --surface-hover: #d6e0d6;
+  --surface-deep: #c4d0c4;
+  --bg-fade: rgba(212, 221, 212, 0);
+
+  --brass-light: #c4a8b8;
+  --brass: #7a3d5c;
+  --brass-deep: #5c2a44;
+  --brass-bright: #8a4468;
+
+  --ink: #1e2820;
+  --ink-soft: #3a463c;
+  --ink-muted: #5c6a5e;
+  --ink-faint: #8a988c;
+
+  --accent: #b04434;
+  --tier-startup: #2f7d3f;
+
+  --border: #b0beb0;
+  --border-soft: #c4d0c4;
+  --border-faint: #d0dad0;
+
+  --card-edge:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 1px 2px rgba(40, 60, 45, 0.18),
+    0 0 0 0.5px rgba(40, 60, 45, 0.12);
+
+  --card-edge-lg:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 6px 18px rgba(40, 60, 45, 0.16),
+    0 0 0 0.5px rgba(40, 60, 45, 0.12);
+
+  --card-edge-pill:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 1px rgba(40, 60, 45, 0.14),
+    0 0 0 0.5px rgba(40, 60, 45, 0.12);
+
+  --card-edge-press:
+    inset 0 2px 4px rgba(40, 60, 45, 0.22),
+    0 0 0 0.5px rgba(40, 60, 45, 0.12);
+
+  --shadow-md: var(--card-edge-lg);
+  --shadow-lg: var(--card-edge-lg);
 }

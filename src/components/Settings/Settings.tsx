@@ -13,7 +13,6 @@ import {
   resetVideoPrefs,
   setVideoPref,
   subscribeVideoPrefs,
-  THEMES,
   type VideoPrefs,
 } from '../../lib/prefs';
 import {
@@ -57,49 +56,9 @@ const VIDEO_TOGGLES: {
   { key: 'showDomNodes', label: 'video.domNodes' },
 ];
 
-type ConfigTab = 'saves' | 'temas' | 'som' | 'video' | 'idioma';
+type ConfigTab = 'saves' | 'som' | 'video' | 'idioma';
 
-const TABS: ConfigTab[] = ['saves', 'temas', 'som', 'video', 'idioma'];
-
-/** Card de tema pintado com as cores dele mesmo, com mini-mockup dentro. */
-function ThemeCard({
-  theme,
-  active = false,
-  onSelect,
-}: {
-  theme: (typeof THEMES)[number];
-  active?: boolean;
-  onSelect?: () => void;
-}) {
-  const { t } = useI18n();
-  const [bg, paper, accentColor, ink] = theme.preview;
-  return (
-    <button
-      className={`${styles.themeCard} ${active ? styles.themeCardActive : ''}`}
-      style={{ background: bg, ['--theme-accent' as string]: accentColor }}
-      onClick={onSelect}
-      disabled={active}
-    >
-      {/* Mini-mockup: um card do tema com texto e barra de acento */}
-      <span
-        className={styles.themeMock}
-        style={{ background: paper }}
-        aria-hidden="true"
-      >
-        <span className={styles.themeMockTitle} style={{ background: accentColor }} />
-        <span
-          className={styles.themeMockLine}
-          style={{ background: ink, opacity: 0.55 }}
-        />
-        <span className={styles.themeMockBar} style={{ background: accentColor }} />
-      </span>
-
-      <span className={styles.themeName} style={{ color: ink }}>
-        {t(`theme.${theme.id}`)}
-      </span>
-    </button>
-  );
-}
+const TABS: ConfigTab[] = ['saves', 'som', 'video', 'idioma'];
 
 const fmtSlotDate = (ms: number, dateLocale: string): string =>
   new Date(ms).toLocaleString(dateLocale, {
@@ -424,31 +383,6 @@ export default function Settings({
                   {Math.round(volume * 100)}%
                 </span>
               </div>
-            </div>
-          </section>
-        )}
-
-        {tab === 'temas' && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>{t('themes.title')}</h2>
-            <p className={styles.sectionHint}>{t('themes.hint')}</p>
-
-            <span className={styles.subLabel}>{t('themes.active')}</span>
-            {(() => {
-              const active =
-                THEMES.find((th) => th.id === videoPrefs.theme) ?? THEMES[0];
-              return <ThemeCard theme={active} active />;
-            })()}
-
-            <span className={styles.subLabel}>{t('themes.available')}</span>
-            <div className={styles.themeGrid}>
-              {THEMES.filter((th) => th.id !== videoPrefs.theme).map((theme) => (
-                <ThemeCard
-                  key={theme.id}
-                  theme={theme}
-                  onSelect={() => setVideoPref('theme', theme.id)}
-                />
-              ))}
             </div>
           </section>
         )}

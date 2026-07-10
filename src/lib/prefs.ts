@@ -6,7 +6,15 @@ const CONFIG_KEY = 'number-legado:config';
 
 /* ===== Tema de cores ===== */
 
-export type ThemeId = 'neutro' | 'midnight' | 'creme' | 'verde';
+export type ThemeId =
+  | 'neutro'
+  | 'claro'
+  | 'midnight'
+  | 'creme'
+  | 'floresta'
+  | 'oceano'
+  | 'ameixa'
+  | 'salvia';
 
 export interface ThemeInfo {
   id: ThemeId;
@@ -15,19 +23,34 @@ export interface ThemeInfo {
   preview: [string, string, string, string];
 }
 
-export const THEMES: ThemeInfo[] = [
-  { id: 'neutro', name: 'Dark neutro', preview: ['#070707', '#111111', '#bcb09a', '#e0e0e0'] },
+/** Básicos: o dark e o light neutros, sem cor de identidade. */
+export const BASIC_THEMES: ThemeInfo[] = [
+  { id: 'neutro', name: 'Dark', preview: ['#070707', '#111111', '#bcb09a', '#e0e0e0'] },
+  { id: 'claro', name: 'Light', preview: ['#dedede', '#f4f4f4', '#2f3f58', '#262626'] },
+];
+
+/** Coloridos: cada um com base e acento próprios. */
+export const COLOR_THEMES: ThemeInfo[] = [
   { id: 'midnight', name: 'Azul meia-noite', preview: ['#0c0e12', '#131620', '#bcb09a', '#d8dce2'] },
   { id: 'creme', name: 'Creme terracota', preview: ['#e8dcc8', '#f7f0e2', '#a34a24', '#3a2e24'] },
-  { id: 'verde', name: 'Verde musgo', preview: ['#0a0f0a', '#111811', '#cfa63a', '#dde3dd'] },
+  { id: 'floresta', name: 'Floresta', preview: ['#0a100c', '#121a14', '#c48a5a', '#dde6de'] },
+  { id: 'oceano', name: 'Oceano', preview: ['#070d10', '#0f171c', '#e08a78', '#dce6ea'] },
+  { id: 'ameixa', name: 'Ameixa', preview: ['#0c0a10', '#15121c', '#d4b85a', '#e6e2ec'] },
+  { id: 'salvia', name: 'Sálvia', preview: ['#d4ddd4', '#eaf0ea', '#5c2a44', '#1e2820'] },
 ];
+
+export const THEMES: ThemeInfo[] = [...BASIC_THEMES, ...COLOR_THEMES];
 
 /** Cor da moldura do navegador (theme-color) por tema. */
 const THEME_BG: Record<ThemeId, string> = {
   neutro: '#070707',
+  claro: '#dedede',
   midnight: '#0c0e12',
   creme: '#e8dcc8',
-  verde: '#0a0f0a',
+  floresta: '#0a100c',
+  oceano: '#070d10',
+  ameixa: '#0c0a10',
+  salvia: '#d4ddd4',
 };
 
 function applyTheme(theme: ThemeId): void {
@@ -71,6 +94,10 @@ function readStored(): Partial<VideoPrefs> {
 }
 
 let prefs: VideoPrefs = { ...DEFAULTS, ...readStored() };
+// Saves antigos: tema removido (ex.: 'neve', 'custom') volta pro padrão
+if (!(prefs.theme in THEME_BG)) {
+  prefs = { ...prefs, theme: DEFAULTS.theme };
+}
 const listeners = new Set<() => void>();
 
 // Aplica o tema salvo assim que o módulo carrega (antes do primeiro paint)
@@ -92,7 +119,7 @@ export function setVideoPref<K extends keyof VideoPrefs>(
   } catch {
     // Sem localStorage — vale só pra sessão
   }
-  if (key === 'theme') applyTheme(value as ThemeId);
+  if (key === 'theme') applyTheme(prefs.theme);
   listeners.forEach((fn) => fn());
 }
 

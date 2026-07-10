@@ -131,7 +131,6 @@ export const pt = {
 
   // Config: tabs
   'tab.saves': 'Jogos salvos',
-  'tab.temas': 'Temas',
   'tab.som': 'Som',
   'tab.video': 'Vídeo',
   'tab.idioma': 'Idioma',
@@ -154,14 +153,20 @@ export const pt = {
   'saves.noData': 'sem dados',
 
   // Config: Temas
+  'themes.open': 'Temas',
   'themes.title': 'Temas',
   'themes.hint': 'Biblioteca de temas.',
   'themes.active': 'tema ativo',
-  'themes.available': 'disponíveis',
-  'theme.neutro': 'Dark neutro',
+  'themes.basic': 'básicos',
+  'themes.colored': 'coloridos',
+  'theme.neutro': 'Dark',
+  'theme.claro': 'Light',
   'theme.midnight': 'Azul meia-noite',
   'theme.creme': 'Creme terracota',
-  'theme.verde': 'Verde musgo',
+  'theme.floresta': 'Floresta',
+  'theme.oceano': 'Oceano',
+  'theme.ameixa': 'Ameixa',
+  'theme.salvia': 'Sálvia',
 
   // Config: Som
   'sound.title': 'Som',

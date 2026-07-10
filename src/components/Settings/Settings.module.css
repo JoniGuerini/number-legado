@@ -312,90 +312,12 @@
   color: var(--paper);
 }
 
-/* ===== Cards de tema (pintados com as cores do próprio tema) ===== */
 .subLabel {
   font: 500 11px var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-faint);
   margin-top: 6px;
-}
-
-/* Disponíveis lado a lado, quebrando linha conforme crescem */
-.themeGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* Cards de tema ocupam a largura do modal (ativo incluso) */
-.themeCard {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  border: none;
-  border-radius: 4px;
-  padding: 14px 18px;
-  cursor: pointer;
-  text-align: left;
-  box-shadow:
-    var(--card-edge),
-    0 0 0 1px rgba(128, 128, 128, 0.25);
-  transition: box-shadow 0.15s, transform 0.08s;
-}
-.themeCard:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    var(--card-edge-lg),
-    0 0 0 1px rgba(128, 128, 128, 0.35);
-}
-.themeCard:active {
-  transform: translateY(1px);
-}
-
-/* Ativo: destacado pela posição (seção própria), sem anel nem interação */
-.themeCardActive,
-.themeCardActive:hover {
-  box-shadow: var(--card-edge);
-  transform: none;
-  cursor: default;
-}
-
-/* Mini-mockup de interface nas cores do tema */
-.themeMock {
-  flex-shrink: 0;
-  width: 128px;
-  border-radius: 4px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-
-.themeMockTitle {
-  width: 40%;
-  height: 5px;
-  border-radius: 3px;
-}
-
-.themeMockLine {
-  width: 75%;
-  height: 4px;
-  border-radius: 3px;
-}
-
-.themeMockBar {
-  width: 100%;
-  height: 5px;
-  border-radius: 3px;
-  margin-top: 2px;
-}
-
-.themeName {
-  flex: 1;
-  font: 500 14px var(--mono);
 }
 
 /* ===== Switch (liga/desliga) =====

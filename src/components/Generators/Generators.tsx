@@ -1008,13 +1008,16 @@ export default function Generators({
 
   const showActionTip = (el: HTMLElement, i: number, kind: TipKind) => {
     const r = el.getBoundingClientRect();
+    // Âncora na borda esquerda do botão, centro vertical — o CSS empurra
+    // o tooltip pra esquerda (não pra cima).
     setActionTip({
       i,
       kind,
-      x: r.left + r.width / 2,
-      y: r.top,
+      x: r.left,
+      y: r.top + r.height / 2,
     });
   };
+
   const hideActionTip = () => setActionTip(null);
   const tipContent = actionTip
     ? actionTooltip(actionTip.i, actionTip.kind)

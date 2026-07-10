@@ -4,6 +4,7 @@ import Generators from './components/Generators/Generators';
 import Activity from './components/Activity/Activity';
 import Combat from './components/Combat/Combat';
 import Settings from './components/Settings/Settings';
+import ThemePicker from './components/ThemePicker/ThemePicker';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import FpsMeter, { VersionBadge } from './components/FpsMeter/FpsMeter';
 import FullscreenToggle from './components/FullscreenToggle/FullscreenToggle';
@@ -39,17 +40,9 @@ function readStoredPage(): Page {
   return 'geradores';
 }
 
-/** macOS: mostra ⌘ no lugar de Alt nos cards de atalho (mesmo efeito). */
-function isApplePlatform(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  return /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
-}
-
 export default function App() {
   useWakeLock();
   const { t } = useI18n();
-  const apple = isApplePlatform();
-  const mod5 = apple ? t('shortcut.cmd') : t('shortcut.alt');
 
   // Feedback sonoro global: um som ao pressionar qualquer botão habilitado e
   // outro (variação mais leve) ao soltar — sensação de tecla física.
@@ -77,19 +70,13 @@ export default function App() {
       down.delete(e.pointerId);
     };
 
-    // Sem menu de contexto do browser: Ctrl+clique / botão direito quebram a
-    // imersão (e atrapalham o atalho ×10 do botão comprar).
-    const onContextMenu = (e: Event) => e.preventDefault();
-
     document.addEventListener('pointerdown', onPointerDown, true);
     document.addEventListener('pointerup', onPointerUp, true);
     document.addEventListener('pointercancel', onPointerCancel, true);
-    document.addEventListener('contextmenu', onContextMenu, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
       document.removeEventListener('pointerup', onPointerUp, true);
       document.removeEventListener('pointercancel', onPointerCancel, true);
-      document.removeEventListener('contextmenu', onContextMenu, true);
     };
   }, []);
 
@@ -105,8 +92,9 @@ export default function App() {
     }
   }, [page]);
 
-  // Config vive num modal sobre a interface (não é mais uma página exclusiva)
+  // Config e Temas vivem em modais sobre a interface
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themesOpen, setThemesOpen] = useState(false);
   useEffect(() => {
     if (!settingsOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -168,33 +156,45 @@ export default function App() {
       <div className={styles.topRight}>
         <FpsMeter />
         <FullscreenToggle />
+        <ThemePicker
+          open={themesOpen}
+          onOpenChange={(open) => {
+            if (open) setSettingsOpen(false);
+            setThemesOpen(open);
+          }}
+        />
         <button
-          className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${page === 'atividade' && !settingsOpen ? styles.cornerBtnOn : ''}`}
+          className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${page === 'atividade' && !settingsOpen && !themesOpen ? styles.cornerBtnOn : ''}`}
           onClick={() => {
             setSettingsOpen(false);
+            setThemesOpen(false);
             setPage((p) => (p === 'atividade' ? 'geradores' : 'atividade'));
           }}
           aria-label={t('nav.atividade')}
-          aria-pressed={page === 'atividade' && !settingsOpen}
+          aria-pressed={page === 'atividade' && !settingsOpen && !themesOpen}
           title={t('nav.atividade')}
         >
           <History className={styles.cornerIcon} aria-hidden="true" />
         </button>
         <button
-          className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${page === 'combate' && !settingsOpen ? styles.cornerBtnOn : ''}`}
+          className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${page === 'combate' && !settingsOpen && !themesOpen ? styles.cornerBtnOn : ''}`}
           onClick={() => {
             setSettingsOpen(false);
+            setThemesOpen(false);
             setPage((p) => (p === 'combate' ? 'geradores' : 'combate'));
           }}
           aria-label={t('nav.combate')}
-          aria-pressed={page === 'combate' && !settingsOpen}
+          aria-pressed={page === 'combate' && !settingsOpen && !themesOpen}
           title={t('nav.combate')}
         >
           <Swords className={styles.cornerIcon} aria-hidden="true" />
         </button>
         <button
           className={`${styles.cornerBtn} ${styles.cornerBtnSquare} ${settingsOpen ? styles.cornerBtnOn : ''}`}
-          onClick={() => setSettingsOpen((o) => !o)}
+          onClick={() => {
+            setThemesOpen(false);
+            setSettingsOpen((o) => !o);
+          }}
           aria-label={t('nav.config')}
           aria-pressed={settingsOpen}
           title={t('nav.config')}
@@ -238,34 +238,6 @@ export default function App() {
           <Combat />
         </main>
       </ErrorBoundary>
-
-      {/* Rodapé: atalhos do botão comprar (só na tela de geradores) */}
-      {page === 'geradores' && (
-        <footer className={styles.footer} aria-label={t('shortcut.aria')}>
-          <div className={styles.shortcutBar}>
-            <span className={styles.shortcutItem}>
-              <kbd className={styles.shortcutKey}>{mod5}</kbd>
-              <span className={styles.shortcutMult}>{t('shortcut.x5')}</span>
-            </span>
-            <span className={styles.shortcutItem}>
-              <kbd className={styles.shortcutKey}>{t('shortcut.ctrl')}</kbd>
-              <span className={styles.shortcutMult}>{t('shortcut.x10')}</span>
-            </span>
-            <span className={styles.shortcutItem}>
-              <kbd className={styles.shortcutKey}>{mod5}</kbd>
-              <span className={styles.shortcutPlus}>+</span>
-              <kbd className={styles.shortcutKey}>{t('shortcut.shift')}</kbd>
-              <span className={styles.shortcutMult}>{t('shortcut.x50')}</span>
-            </span>
-            <span className={styles.shortcutItem}>
-              <kbd className={styles.shortcutKey}>{t('shortcut.ctrl')}</kbd>
-              <span className={styles.shortcutPlus}>+</span>
-              <kbd className={styles.shortcutKey}>{t('shortcut.shift')}</kbd>
-              <span className={styles.shortcutMult}>{t('shortcut.x100')}</span>
-            </span>
-          </div>
-        </footer>
-      )}
 
       {settingsOpen && (
         <div
