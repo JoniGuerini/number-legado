@@ -253,17 +253,22 @@ function highestUnlocked(gens: Gen[]): number {
   return max;
 }
 
-/** Faixa de 4 geradores: 1º prestígio no G4, 2º no G8, 3º no G12… */
+/** Cada faixa inédita de 4 geradores concede um nível de prestígio. */
 const PRESTIGE_GEN_STEP = 4;
 
-/** Gerador mínimo (1-based) pra prestigiar de novo, dado quantas vezes já prestigou. */
-function prestigeGateOf(prestigeCount: number): number {
-  return PRESTIGE_GEN_STEP * (prestigeCount + 1);
+/** Gerador mínimo (1-based) que ainda concede um nível não resgatado. */
+function prestigeGateOf(prestigeLevels: number): number {
+  return PRESTIGE_GEN_STEP * (prestigeLevels + 1);
 }
 
-/** Níveis ganhos ao prestigiar: floor(maiorGerador / 4) — G4–G7 → +1, G8–G11 → +2… */
-function prestigeGainOf(gens: Gen[]): number {
-  return Math.floor(highestUnlocked(gens) / PRESTIGE_GEN_STEP);
+/** Resgata somente faixas inéditas: chegar novamente ao mesmo gerador não
+    repete bônus já obtidos. Ex.: após resgatar G200 (+50), o próximo começa
+    no G204; chegar ao G200 de novo rende zero. */
+function prestigeGainOf(gens: Gen[], prestigeLevels: number): number {
+  const reachedLevels = Math.floor(
+    highestUnlocked(gens) / PRESTIGE_GEN_STEP
+  );
+  return Math.max(0, reachedLevels - prestigeLevels);
 }
 
 /** Base prevista após t segundos, assumindo nenhuma compra nova. A cascata
@@ -679,13 +684,13 @@ export default function Generators({
   };
 
   // Prestígio: sacrifica a run e ganha níveis permanentes (produção ×2 cada).
-  // Volta à tela de modo com o multiplicador já ativo. O próximo gate sobe
-  // (G3 → G6 → G9…) pra não prestigiar de novo no mínimo da run anterior.
+  // Volta à tela de modo com o multiplicador já ativo. Cada faixa de quatro
+  // geradores só pode ser resgatada uma vez.
   const doPrestige = () => {
     setGame((g) => {
-      const gate = prestigeGateOf(g.prestigeCount);
+      const gate = prestigeGateOf(g.prestigeLevels);
       const highest = highestUnlocked(g.gens);
-      const gain = prestigeGainOf(g.gens);
+      const gain = prestigeGainOf(g.gens, g.prestigeLevels);
       if (highest < gate || gain <= 0) return g;
       return {
         base: START_BASE,
@@ -741,8 +746,8 @@ export default function Generators({
   });
 
   const isAuto = game.mode === 'auto';
-  const prestigeGate = prestigeGateOf(game.prestigeCount);
-  const prestigeGain = prestigeGainOf(game.gens);
+  const prestigeGate = prestigeGateOf(game.prestigeLevels);
+  const prestigeGain = prestigeGainOf(game.gens, game.prestigeLevels);
   const canPrestige =
     highestUnlocked(game.gens) >= prestigeGate && prestigeGain > 0;
   const nextPrestigeMult = prestigeMultOf(
