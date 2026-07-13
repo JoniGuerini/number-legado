@@ -2,12 +2,24 @@ import Decimal from 'break_eternity.js';
 
 const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No'];
 
+/** Corrige resíduos numéricos universais antes da exibição. Operações com
+    Decimal em magnitudes muito altas podem produzir 99.99999999 quando o
+    resultado matemático é 100. A tolerância é relativa e minúscula: corrige
+    apenas valores colados ao inteiro, sem arredondar um 99.9 legítimo. */
+function snapNearInteger(num: number): number {
+  if (!Number.isFinite(num)) return num;
+  const nearest = Math.round(num);
+  const tolerance = Math.max(1, Math.abs(num)) * 1e-9;
+  return Math.abs(num - nearest) <= tolerance ? nearest : num;
+}
+
 /** Trunca (não arredonda) para n casas — estilo odômetro: "0.5" só aparece
-    quando o valor realmente vale 0.5. O epsilon evita que resíduo de ponto
-    flutuante (0.4999...9) derrube o dígito que deveria estar completo. */
+    quando o valor realmente vale 0.5. Resíduos próximos de inteiros são
+    normalizados antes, de forma centralizada. */
 function truncTo(num: number, decimals: number): string {
+  const normalized = snapNearInteger(num);
   const f = 10 ** decimals;
-  return (Math.floor(num * f + 1e-9) / f).toFixed(decimals);
+  return (Math.floor(normalized * f + 1e-9) / f).toFixed(decimals);
 }
 
 /** Sufixo de letras infinito: 0='aa'...'az', 26='ba'...675='zz',
@@ -38,18 +50,28 @@ export function fmt(n: Decimal | number): string {
   if (d.eq(0)) return '0';
 
   if (d.lt(1000)) {
-    const num = d.toNumber();
-    return Number.isInteger(num) || num >= 100
-      ? Math.floor(num + 1e-9).toString()
-      : truncTo(num, 1);
+    const num = snapNearInteger(d.toNumber());
+    // Um resíduo imediatamente abaixo de 1K deve usar o sufixo K.
+    if (num < 1000) {
+      return Number.isInteger(num) || num >= 100
+        ? Math.floor(num + 1e-9).toString()
+        : truncTo(num, 1);
+    }
   }
 
   const exp = d.log10().toNumber();
   // Além do alcance de expoente legível, delega pro toString do Decimal ("ee42"...)
   if (!Number.isFinite(exp) || exp >= 1e15) return d.toString();
 
-  const tier = Math.floor(exp / 3);
-  const scaled = d.div(Decimal.pow(10, tier * 3)).toNumber();
+  let tier = Math.floor(exp / 3);
+  let scaled = snapNearInteger(
+    d.div(Decimal.pow(10, tier * 3)).toNumber()
+  );
+  // Evita "1000M" quando o valor está colado à troca de sufixo: vira "1B".
+  if (scaled >= 1000) {
+    tier++;
+    scaled = snapNearInteger(scaled / 1000);
+  }
   const body = scaled >= 100 ? truncTo(scaled, 0) : truncTo(scaled, 1);
   const suffix = tier < SUFFIXES.length ? SUFFIXES[tier] : letterSuffix(tier - SUFFIXES.length);
   return body + suffix;
@@ -65,7 +87,10 @@ export function fmtMoney(n: Decimal | number): string {
     seriam irrelevantes. */
 export function fmtCost(n: Decimal | number): string {
   const d = n instanceof Decimal ? n : new Decimal(n);
-  if (d.lt(1000)) return truncTo(d.toNumber(), 2);
+  if (d.lt(1000)) {
+    const num = snapNearInteger(d.toNumber());
+    if (num < 1000) return truncTo(num, 2);
+  }
   return fmt(d);
 }
 
@@ -73,8 +98,8 @@ export function fmtCost(n: Decimal | number): string {
 export function fmtRate(n: Decimal | number): string {
   const d = n instanceof Decimal ? n : new Decimal(n);
   if (d.lt(1000)) {
-    const num = d.toNumber();
-    if (!Number.isInteger(num)) return truncTo(num, 1);
+    const num = snapNearInteger(d.toNumber());
+    if (num < 1000 && !Number.isInteger(num)) return truncTo(num, 1);
   }
   return fmt(d);
 }
