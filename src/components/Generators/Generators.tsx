@@ -141,13 +141,10 @@ function loadGame(saveKey: string): Game {
 /** Encarecimento por compra: cada unidade comprada custa 10% a mais. */
 const COST_GROWTH = 1.1;
 
-/** Custo do gerador N (índice i): expoente triangular i·(i+1)/2 — o salto
-    entre geradores cresce a cada degrau (×10, ×100, ×1000…): 1, 10, 1K, 1M,
-    10B… +10% a cada compra. */
+/** Custo do gerador N (índice i): base 100^i — salto fixo ×100 entre
+    geradores (1, 100, 10K, 1M, 100M…); +10% a cada compra. */
 function costOf(i: number, bought: number): Decimal {
-  return Decimal.pow(10, (i * (i + 1)) / 2).mul(
-    Decimal.pow(COST_GROWTH, bought)
-  );
+  return Decimal.pow(100, i).mul(Decimal.pow(COST_GROWTH, bought));
 }
 
 /** Soma dos custos de `count` compras a partir de `bought` (série geométrica). */
@@ -231,11 +228,10 @@ function pendingFragmentsOf(gen: Gen, i: number): number {
   );
 }
 
-/** Custo (em fragmentos) do próximo nível de investimento. Cada gerador tem
-    a sua base — o gerador i começa custando o dobro do anterior (1, 2, 4…) —
-    e cada nível comprado dobra o próximo: 2^(i + nível). */
-function boostCostOf(i: number, boost: number): number {
-  return 2 ** (i + boost);
+/** Custo (em fragmentos) do próximo nível de investimento. Todo gerador,
+    independentemente do tier, começa em 1; cada nível dobra o próximo. */
+function boostCostOf(boost: number): number {
+  return 2 ** boost;
 }
 
 /** Multiplicador de produção do gerador: ×2 por nível investido. */
@@ -673,7 +669,7 @@ export default function Generators({
   // próximo nível passa a custar o dobro.
   const buyBoost = (i: number) => {
     setGame((g) => {
-      const cost = boostCostOf(i, g.gens[i].boost);
+      const cost = boostCostOf(g.gens[i].boost);
       if (g.fragments < cost) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
@@ -1338,14 +1334,14 @@ export default function Generators({
                 >
                   <button
                     className={`btn-secondary ${styles.boostBtn}`}
-                    disabled={game.fragments < boostCostOf(i, gen.boost)}
+                    disabled={game.fragments < boostCostOf(gen.boost)}
                     {...holdProps(() => buyBoost(i))}
                     aria-label={t('frag.investAria', {
                       n: i + 1,
-                      cost: boostCostOf(i, gen.boost),
+                      cost: boostCostOf(gen.boost),
                     })}
                   >
-                    {t('frag.investBtn', { cost: fmt(boostCostOf(i, gen.boost)) })}
+                    {t('frag.investBtn', { cost: fmt(boostCostOf(gen.boost)) })}
                   </button>
                 </div>
 
