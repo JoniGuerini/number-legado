@@ -283,6 +283,12 @@
   background: linear-gradient(to top, var(--bg) 25%, var(--bg-fade));
 }
 
+/* O dock sticky do próximo gerador ocupa o rodapé da lista. Mantém a seta e
+   o degradê de "ir ao fim" logo acima dele, em vez de escondidos atrás. */
+.listPaneWithDock .fadeBottom {
+  bottom: 51px;
+}
+
 /* Próximo gerador bloqueado: no fim da lista; sticky só “gruda” no rodapé
    quando o conteúdo ultrapassa a área visível (sem rolagem, fica no fluxo). */
 .unlockDock {
@@ -670,6 +676,10 @@
 
 /* ===== Mobile ===== */
 @media (max-width: 640px) {
+  .listPaneWithDock .fadeBottom {
+    bottom: 45px;
+  }
+
   .exportBtn {
     white-space: nowrap;
   }

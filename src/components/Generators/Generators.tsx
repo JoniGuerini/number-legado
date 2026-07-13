@@ -1229,7 +1229,9 @@ export default function Generators({
         )}
 
         <div className={styles.listWrap}>
-        <div className={styles.listPane}>
+        <div
+          className={`${styles.listPane} ${unlockRow ? styles.listPaneWithDock : ''}`}
+        >
         {edges.above && (
           <button
             className={`${styles.fade} ${styles.fadeTop}`}
