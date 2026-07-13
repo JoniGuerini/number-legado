@@ -141,10 +141,13 @@ function loadGame(saveKey: string): Game {
 /** Encarecimento por compra: cada unidade comprada custa 10% a mais. */
 const COST_GROWTH = 1.1;
 
-/** Custo do gerador N (índice i): base 100^i — salto fixo ×100 entre
-    geradores (1, 100, 10K, 1M, 100M…); +10% a cada compra. */
+/** Custo do gerador N (índice i): expoente triangular i·(i+1)/2 — o salto
+    entre geradores cresce a cada degrau (×10, ×100, ×1000…): 1, 10, 1K, 1M,
+    10B… +10% a cada compra. */
 function costOf(i: number, bought: number): Decimal {
-  return Decimal.pow(100, i).mul(Decimal.pow(COST_GROWTH, bought));
+  return Decimal.pow(10, (i * (i + 1)) / 2).mul(
+    Decimal.pow(COST_GROWTH, bought)
+  );
 }
 
 /** Soma dos custos de `count` compras a partir de `bought` (série geométrica). */
