@@ -212,19 +212,18 @@ function milestonesOf(amount: Decimal): number {
   return amount.mul(1 + 1e-9).log10().floor().toNumber();
 }
 
-/** Fragmentos acumulados pelos n primeiros marcos do gerador de tier `tier`
-    (G1→1, G2→2…). Cada marco rende exatamente `tier` fragmentos. */
-function fragmentsForMilestones(n: number, tier: number): number {
-  return n * tier;
+/** Fragmentos acumulados pelos n primeiros marcos, independentemente do tier.
+    O marco N concede N fragmentos: 1 + 2 + 3 + … + n. */
+function fragmentsForMilestones(n: number): number {
+  return (n * (n + 1)) / 2;
 }
 
 /** Fragmentos pendentes de resgate: o que os marcos alcançados renderam
     menos o que os marcos já resgatados renderam. */
-function pendingFragmentsOf(gen: Gen, i: number): number {
-  const tier = i + 1;
+function pendingFragmentsOf(gen: Gen): number {
   return (
-    fragmentsForMilestones(milestonesOf(gen.amount), tier) -
-    fragmentsForMilestones(gen.claimed, tier)
+    fragmentsForMilestones(milestonesOf(gen.amount)) -
+    fragmentsForMilestones(gen.claimed)
   );
 }
 
@@ -646,7 +645,7 @@ export default function Generators({
   // (o rendimento dos marcos alcançados menos o dos já resgatados).
   const claim = (i: number) => {
     setGame((g) => {
-      const pending = pendingFragmentsOf(g.gens[i], i);
+      const pending = pendingFragmentsOf(g.gens[i]);
       if (pending <= 0) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
@@ -659,8 +658,8 @@ export default function Generators({
   const claimAll = () => {
     setGame((g) => {
       let total = 0;
-      const gens = g.gens.map((x, i) => {
-        const pending = pendingFragmentsOf(x, i);
+      const gens = g.gens.map((x) => {
+        const pending = pendingFragmentsOf(x);
         if (pending <= 0) return x;
         total += pending;
         return { ...x, claimed: milestonesOf(x.amount) };
@@ -1204,7 +1203,7 @@ export default function Generators({
           <span className={styles.headerCell}>
             {t('frag.next')}
             {/* Com 2+ geradores com pendência, atalho pra resgatar tudo */}
-            {game.gens.filter((x, i) => pendingFragmentsOf(x, i) > 0).length >= 2 && (
+            {game.gens.filter((x) => pendingFragmentsOf(x) > 0).length >= 2 && (
               <button
                 className={styles.claimAll}
                 onClick={claimAll}
@@ -1264,10 +1263,10 @@ export default function Generators({
           const target = i === 0 ? 'base' : `${i}`;
 
           // Fragmentos pendentes: rendimento dos marcos alcançados menos o dos
-          // já resgatados (cada marco rende o tier do gerador: G1→1, G2→2…).
+          // já resgatados (o marco N rende N, independentemente do tier).
           // Sem pendência, o chip vira medidor de progresso até o próximo marco
           // (próxima potência de 10 de posse) — mesmo tamanho, altura uniforme.
-          const pending = pendingFragmentsOf(gen, i);
+          const pending = pendingFragmentsOf(gen);
           const reachedMilestones = milestonesOf(gen.amount);
           const currentMilestone =
             reachedMilestones === 0
