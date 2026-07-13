@@ -1266,9 +1266,22 @@ export default function Generators({
           // Sem pendência, o chip vira medidor de progresso até o próximo marco
           // (próxima potência de 10 de posse) — mesmo tamanho, altura uniforme.
           const pending = pendingFragmentsOf(gen, i);
-          const nextMilestone = Decimal.pow(10, milestonesOf(gen.amount) + 1);
+          const reachedMilestones = milestonesOf(gen.amount);
+          const currentMilestone =
+            reachedMilestones === 0
+              ? new Decimal(0)
+              : Decimal.pow(10, reachedMilestones);
+          const nextMilestone = Decimal.pow(10, reachedMilestones + 1);
+          // Progresso relativo à faixa atual, não ao valor absoluto:
+          // 100 → 0%, 550 → 50%, 1.000 → novo marco (0% da próxima faixa).
           const fragPct = Math.min(
-            dispAmount(i).div(nextMilestone).toNumber() * 100,
+            Math.max(
+              dispAmount(i)
+                .sub(currentMilestone)
+                .div(nextMilestone.sub(currentMilestone))
+                .toNumber() * 100,
+              0
+            ),
             100
           );
           const maxBuy = maxBuyOf(i, gen.bought, game.base);
