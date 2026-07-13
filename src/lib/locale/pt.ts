@@ -44,7 +44,7 @@ export const pt = {
   'mode.manual': 'Manual',
   'mode.auto': 'Automático',
   'mode.hintAuto':
-    'O jogo compra sozinho o gerador de maior nível que couber no saldo: desbloqueia o próximo ou empilha o mais alto já desbloqueado.',
+    'O jogo compra sozinho o gerador de maior nível que couber nos recursos: desbloqueia o próximo ou empilha o mais alto já desbloqueado.',
   'mode.hintManual': 'Você faz todas as compras manualmente.',
 
   // Geradores
@@ -62,6 +62,7 @@ export const pt = {
   'gen.buyMaxBtn': '{cost}',
   'gen.buyMaxAria': 'Comprar {n} unidades por {cost}',
   'gen.buyMultAria': 'Comprar até {n} unidades por {cost}',
+  'gen.dualCost': '{base} + {previous} G{generator}',
   // Atalhos do botão comprar (rodapé)
   'shortcut.aria': 'Atalhos do botão comprar',
   'shortcut.alt': 'Alt',
@@ -80,7 +81,7 @@ export const pt = {
   // Timer do botão de desbloqueio quando o custo já foi atingido
   'gen.unlockReady': 'Pronto',
 
-  // Fragmentos (marcos 10/100/1000…; cada marco rende o tier do gerador)
+  // Fragmentos (marcos 10/100/1000…; marco N rende N)
   'frag.label': 'fragmentos',
   'frag.claimAria': 'Resgatar {n} fragmentos',
   'frag.next': 'próximo fragmento',
@@ -98,6 +99,9 @@ export const pt = {
   'frag.investTipNoChange': 'sem mudança',
   'frag.investTipBecomes': 'passa a ser alcançável',
   'frag.investTipCantAfford': 'faltam {need}',
+  'frag.investTipCantAffordPrevious': 'faltam {need} G{generator}',
+  'frag.investTipCantAffordBoth':
+    'faltam {base} base + {previous} G{generator}',
   'frag.investTipReady': 'Próximo gerador já pronto',
   'frag.investTipUnknown': 'Sem previsão de desbloqueio',
 

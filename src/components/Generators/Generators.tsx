@@ -151,21 +151,61 @@ function totalCostOf(i: number, _bought: number, count: number): Decimal {
   return costOf(i, 0).mul(count);
 }
 
-/** Máximo de unidades compráveis com o saldo atual + custo total gasto. */
+/** Unidades do gerador anterior exigidas por unidade comprada: G2→5 G1,
+    G3→10 G2, G4→15 G3… G1 não tem custo secundário. */
+function previousCostPerUnitOf(i: number): number {
+  return i * 5;
+}
+
+function previousTotalCostOf(i: number, count: number): Decimal {
+  return new Decimal(previousCostPerUnitOf(i)).mul(count);
+}
+
+interface BuyQuote {
+  count: number;
+  /** Custo total em recurso base. */
+  total: Decimal;
+  /** Custo total em unidades do gerador anterior. */
+  previousTotal: Decimal;
+}
+
+/** Máximo de unidades compráveis, limitado pelos dois recursos. */
 function maxBuyOf(
   i: number,
   bought: number,
-  balance: Decimal
-): { count: number; total: Decimal } {
+  balance: Decimal,
+  previousAmount: Decimal | null
+): BuyQuote {
   const unit = costOf(i, bought);
-  if (balance.lt(unit)) return { count: 0, total: new Decimal(0) };
+  const previousUnit = previousCostPerUnitOf(i);
+  if (
+    balance.lt(unit) ||
+    (previousUnit > 0 &&
+      (!previousAmount || previousAmount.lt(previousUnit)))
+  ) {
+    return {
+      count: 0,
+      total: new Decimal(0),
+      previousTotal: new Decimal(0),
+    };
+  }
 
   // `bought` é number: limita o lote ao intervalo inteiro seguro.
   const capacity = Math.max(0, Number.MAX_SAFE_INTEGER - bought);
-  const raw = balance.div(unit).floor().toNumber();
-  const count = Math.min(Number.isFinite(raw) ? raw : capacity, capacity);
+  const rawBase = balance.div(unit).floor().toNumber();
+  const byBase = Number.isFinite(rawBase) ? rawBase : capacity;
+  const rawPrevious =
+    previousUnit > 0
+      ? previousAmount!.div(previousUnit).floor().toNumber()
+      : capacity;
+  const byPrevious = Number.isFinite(rawPrevious) ? rawPrevious : capacity;
+  const count = Math.min(byBase, byPrevious, capacity);
 
-  return { count, total: unit.mul(count) };
+  return {
+    count,
+    total: unit.mul(count),
+    previousTotal: previousTotalCostOf(i, count),
+  };
 }
 
 /** Compra em lote limitada pelo saldo: até `want` unidades. */
@@ -173,13 +213,30 @@ function batchBuyOf(
   i: number,
   bought: number,
   balance: Decimal,
+  previousAmount: Decimal | null,
   want: number
-): { count: number; total: Decimal } {
-  if (want <= 0) return { count: 0, total: new Decimal(0) };
-  const max = maxBuyOf(i, bought, balance);
+): BuyQuote {
+  if (want <= 0) {
+    return {
+      count: 0,
+      total: new Decimal(0),
+      previousTotal: new Decimal(0),
+    };
+  }
+  const max = maxBuyOf(i, bought, balance, previousAmount);
   const count = Math.min(want, max.count);
-  if (count <= 0) return { count: 0, total: new Decimal(0) };
-  return { count, total: totalCostOf(i, bought, count) };
+  if (count <= 0) {
+    return {
+      count: 0,
+      total: new Decimal(0),
+      previousTotal: new Decimal(0),
+    };
+  }
+  return {
+    count,
+    total: totalCostOf(i, bought, count),
+    previousTotal: previousTotalCostOf(i, count),
+  };
 }
 
 /** Multiplicador do botão de compra: Alt/⌘ → ×5, Ctrl → ×10;
@@ -301,6 +358,23 @@ function timeToUnlock(game: Game, cost: Decimal): number | null {
   return hi;
 }
 
+/** ETA do desbloqueio considerando também o estoque obrigatório do gerador
+    anterior. Esse estoque não cresce enquanto o próximo gerador está travado,
+    então sem ele ainda não há previsão automática. */
+function timeToUnlockWithRequirements(
+  game: Game,
+  i: number,
+  cost: Decimal
+): number | null {
+  if (
+    i > 0 &&
+    game.gens[i - 1].amount.lt(previousTotalCostOf(i, 1))
+  ) {
+    return null;
+  }
+  return timeToUnlock(game, cost);
+}
+
 /** Timestep FIXO da simulação. O jogo avança sempre em passos de exatamente
     0.25s, ancorados no startedAt — o estado é função pura do nº de passos,
     então duas máquinas com o mesmo save executam a mesma sequência de contas
@@ -361,9 +435,18 @@ function advance(g: Game, nSteps: number): Game {
       for (const i of candidates) {
         if (i < 0) continue;
         const cost = costOf(i, gens[i].bought);
-        if (base.lt(cost)) continue;
+        const previousCost = previousTotalCostOf(i, 1);
+        if (
+          base.lt(cost) ||
+          (i > 0 && gens[i - 1].amount.lt(previousCost))
+        ) {
+          continue;
+        }
         const wasLocked = gens[i].bought === 0;
         base = base.sub(cost);
+        if (i > 0) {
+          gens[i - 1].amount = gens[i - 1].amount.sub(previousCost);
+        }
         gens[i].bought += 1;
         gens[i].amount = gens[i].amount.add(1);
         if (wasLocked) {
@@ -590,13 +673,22 @@ export default function Generators({
       Com atalho, só compra o lote cheio — sem parcial. */
   const buy = (i: number, want = 1) => {
     setGame((g) => {
-      const { count, total } = batchBuyOf(i, g.gens[i].bought, g.base, want);
+      const { count, total, previousTotal } = batchBuyOf(
+        i,
+        g.gens[i].bought,
+        g.base,
+        i > 0 ? g.gens[i - 1].amount : null,
+        want
+      );
       if (count <= 0) return g;
-      // Atalho: saldo insuficiente pro lote → não compra nada
+      // Atalho: recursos insuficientes pro lote → não compra nada
       if (want > 1 && count < want) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
       const wasLocked = gens[i].bought === 0;
+      if (i > 0) {
+        gens[i - 1].amount = gens[i - 1].amount.sub(previousTotal);
+      }
       gens[i].bought += count;
       gens[i].amount = gens[i].amount.add(count);
       if (wasLocked) {
@@ -614,11 +706,19 @@ export default function Generators({
   const buyMax = (i: number) => {
     setConfirmBuyMax(null);
     setGame((g) => {
-      const { count, total } = maxBuyOf(i, g.gens[i].bought, g.base);
+      const { count, total, previousTotal } = maxBuyOf(
+        i,
+        g.gens[i].bought,
+        g.base,
+        i > 0 ? g.gens[i - 1].amount : null
+      );
       if (count <= 0) return g;
 
       const gens = g.gens.map((x) => ({ ...x }));
       const wasLocked = gens[i].bought === 0;
+      if (i > 0) {
+        gens[i - 1].amount = gens[i - 1].amount.sub(previousTotal);
+      }
       gens[i].bought += count;
       gens[i].amount = gens[i].amount.add(count);
       if (wasLocked) {
@@ -796,7 +896,7 @@ export default function Generators({
       cache.etas = new Map();
     }
     if (!cache.etas.has(i)) {
-      const seconds = timeToUnlock(game, cost);
+      const seconds = timeToUnlockWithRequirements(game, i, cost);
       cache.etas.set(i, seconds === null ? null : Date.now() + seconds * 1000);
     }
     return cache.etas.get(i) ?? null;
@@ -835,10 +935,11 @@ export default function Generators({
       };
     }
     if (kind === 'buy1') {
-      const { count, total } = batchBuyOf(
+      const { count, total, previousTotal } = batchBuyOf(
         i,
         game.gens[i].bought,
         game.base,
+        i > 0 ? game.gens[i - 1].amount : null,
         buyMult
       );
       // Atalho: só previewa o lote cheio
@@ -848,46 +949,111 @@ export default function Generators({
         game: {
           ...game,
           base: game.base.sub(total),
-          gens: game.gens.map((g, j) =>
-            j === i
-              ? {
-                  ...g,
-                  bought: g.bought + count,
-                  amount: g.amount.add(count),
-                }
-              : g
-          ),
+          gens: game.gens.map((g, j) => {
+            if (j === i) {
+              return {
+                ...g,
+                bought: g.bought + count,
+                amount: g.amount.add(count),
+              };
+            }
+            if (j === i - 1) {
+              return { ...g, amount: g.amount.sub(previousTotal) };
+            }
+            return g;
+          }),
         },
       };
     }
     // buyMax
-    const { count, total } = maxBuyOf(i, game.gens[i].bought, game.base);
+    const { count, total, previousTotal } = maxBuyOf(
+      i,
+      game.gens[i].bought,
+      game.base,
+      i > 0 ? game.gens[i - 1].amount : null
+    );
     if (count <= 0) return null;
     return {
       units: count,
       game: {
         ...game,
         base: game.base.sub(total),
-        gens: game.gens.map((g, j) =>
-          j === i
-            ? {
-                ...g,
-                bought: g.bought + count,
-                amount: g.amount.add(count),
-              }
-            : g
-        ),
+        gens: game.gens.map((g, j) => {
+          if (j === i) {
+            return {
+              ...g,
+              bought: g.bought + count,
+              amount: g.amount.add(count),
+            };
+          }
+          if (j === i - 1) {
+            return { ...g, amount: g.amount.sub(previousTotal) };
+          }
+          return g;
+        }),
       },
     };
+  };
+
+  const purchaseCostLabel = (
+    i: number,
+    baseCost: Decimal,
+    count: number
+  ): string => {
+    if (i === 0) return fmtCost(baseCost);
+    return t('gen.dualCost', {
+      base: fmtCost(baseCost),
+      previous: fmt(previousTotalCostOf(i, count)),
+      generator: i,
+    });
+  };
+
+  const purchaseShortageNote = (
+    i: number,
+    baseNeed: Decimal,
+    previousNeed: Decimal
+  ): string => {
+    const baseMissing = Decimal.max(baseNeed.sub(game.base), 0);
+    const previousMissing =
+      i > 0
+        ? Decimal.max(previousNeed.sub(game.gens[i - 1].amount), 0)
+        : new Decimal(0);
+    if (baseMissing.gt(0) && previousMissing.gt(0)) {
+      return t('frag.investTipCantAffordBoth', {
+        base: fmtCost(baseMissing),
+        previous: fmt(previousMissing),
+        generator: i,
+      });
+    }
+    if (previousMissing.gt(0)) {
+      return t('frag.investTipCantAffordPrevious', {
+        need: fmt(previousMissing),
+        generator: i,
+      });
+    }
+    return t('frag.investTipCantAfford', {
+      need: fmtCost(baseMissing.gt(0) ? baseMissing : baseNeed),
+    });
   };
 
   /** Tooltip agora/depois/economiza (ou atrasa) pro próximo desbloqueio. */
   const actionTooltip = (i: number, kind: TipKind): TipContent => {
     const maxUnits =
       kind === 'buyMax'
-        ? maxBuyOf(i, game.gens[i].bought, game.base).count
+        ? maxBuyOf(
+            i,
+            game.gens[i].bought,
+            game.base,
+            i > 0 ? game.gens[i - 1].amount : null
+          ).count
         : kind === 'buy1' && buyMult > 1
-          ? batchBuyOf(i, game.gens[i].bought, game.base, buyMult).count
+          ? batchBuyOf(
+              i,
+              game.gens[i].bought,
+              game.base,
+              i > 0 ? game.gens[i - 1].amount : null,
+              buyMult
+            ).count
           : undefined;
     const withUnits = (tip: TipContent): TipContent =>
       maxUnits !== undefined ? { ...tip, units: maxUnits } : tip;
@@ -896,24 +1062,28 @@ export default function Generators({
       return withUnits({ title: t('frag.investTipReady') });
     }
 
-    const nowS = timeToUnlock(game, nextUnlockCost);
+    const nowS = timeToUnlockWithRequirements(
+      game,
+      nextLockedIdx,
+      nextUnlockCost
+    );
     const preview = previewAfter(i, kind);
     if (!preview) {
-      // buy1 / buyMax sem saldo: quanto falta pro lote (ou 1 unidade)
-      const need =
-        kind === 'buy1' && buyMult > 1
-          ? totalCostOf(i, game.gens[i].bought, buyMult)
-          : costOf(i, game.gens[i].bought);
-      const short = need.sub(game.base);
+      // Recursos que faltam pro lote (ou pra 1 unidade).
+      const wanted = kind === 'buy1' && buyMult > 1 ? buyMult : 1;
+      const baseNeed = totalCostOf(i, game.gens[i].bought, wanted);
+      const previousNeed = previousTotalCostOf(i, wanted);
       return withUnits({
         title: t('frag.investTipTitle'),
-        note: t('frag.investTipCantAfford', {
-          need: fmtCost(short.gt(0) ? short : need),
-        }),
+        note: purchaseShortageNote(i, baseNeed, previousNeed),
         units: 0,
       });
     }
-    const afterS = timeToUnlock(preview.game, nextUnlockCost);
+    const afterS = timeToUnlockWithRequirements(
+      preview.game,
+      nextLockedIdx,
+      nextUnlockCost
+    );
 
     if (nowS === 0) return withUnits({ title: t('frag.investTipReady') });
     if (nowS === null && afterS === null) {
@@ -986,7 +1156,12 @@ export default function Generators({
 
   // Clique no MAX: se não compensar, abre o modal; senão compra direto.
   const requestBuyMax = (i: number) => {
-    const { count } = maxBuyOf(i, game.gens[i].bought, game.base);
+    const { count } = maxBuyOf(
+      i,
+      game.gens[i].bought,
+      game.base,
+      i > 0 ? game.gens[i - 1].amount : null
+    );
     if (count <= 0) return;
     if (buyMaxIsWasteful(i, count)) {
       setActionTip(null);
@@ -1025,12 +1200,24 @@ export default function Generators({
       ? (() => {
           const i = nextLockedIdx;
           const cost = costOf(i, 0);
-          const progress = Math.min(dispBase.div(cost).toNumber(), 1);
-          const etaAt = progress >= 1 ? null : unlockEtaAt(i, cost);
+          const previousCost = previousTotalCostOf(i, 1);
+          const previousReady =
+            i === 0 || game.gens[i - 1].amount.gte(previousCost);
+          const previousProgress =
+            i === 0
+              ? 1
+              : game.gens[i - 1].amount.div(previousCost).toNumber();
+          const progress = Math.min(
+            dispBase.div(cost).toNumber(),
+            previousProgress,
+            1
+          );
+          const etaAt =
+            progress >= 1 || !previousReady ? null : unlockEtaAt(i, cost);
           const etaText =
             progress >= 1
               ? t('gen.unlockReady')
-              : etaAt === null
+              : !previousReady || etaAt === null
                 ? '—'
                 : fmtTime(Math.max((etaAt - Date.now()) / 1000, 0));
           return (
@@ -1048,7 +1235,9 @@ export default function Generators({
                 <span className={`${styles.progressMeta} ${styles.progressPct}`}>
                   {(Math.floor(progress * 10000) / 100).toFixed(2)}%
                 </span>
-                <span className={styles.progressLabel}>{fmtCost(cost)}</span>
+                <span className={styles.progressLabel}>
+                  {purchaseCostLabel(i, cost, 1)}
+                </span>
                 <span className={`${styles.progressMeta} ${styles.progressEta}`}>
                   {etaText}
                 </span>
@@ -1275,13 +1464,24 @@ export default function Generators({
             ),
             100
           );
-          const maxBuy = maxBuyOf(i, gen.bought, game.base);
+          const maxBuy = maxBuyOf(
+            i,
+            gen.bought,
+            game.base,
+            i > 0 ? game.gens[i - 1].amount : null
+          );
           // Com atalho: sempre o custo do lote cheio (×5/×10…), não o parcial
           // que o saldo cobre nem o preço unitário.
           const buyCost =
             buyMult > 1
               ? totalCostOf(i, gen.bought, buyMult)
               : cost;
+          const buyCostLabel = purchaseCostLabel(i, buyCost, buyMult);
+          const maxCostLabel = purchaseCostLabel(
+            i,
+            maxBuy.count > 0 ? maxBuy.total : cost,
+            maxBuy.count > 0 ? maxBuy.count : 1
+          );
 
           return (
             <div
@@ -1363,7 +1563,7 @@ export default function Generators({
                 >
                   <button
                     className="btn-primary"
-                    disabled={isAuto || game.base.lt(buyCost)}
+                    disabled={isAuto || maxBuy.count < buyMult}
                     {...holdProps(() =>
                       buy(i, buyMultFromMods(modsRef.current))
                     )}
@@ -1371,7 +1571,7 @@ export default function Generators({
                       buyMult > 1
                         ? t('gen.buyMultAria', {
                             n: buyMult,
-                            cost: fmtCost(buyCost),
+                            cost: buyCostLabel,
                           })
                         : undefined
                     }
@@ -1379,10 +1579,10 @@ export default function Generators({
                     {buyMult > 1 ? (
                       <>
                         <span className={styles.buyMult}>×{buyMult}</span>
-                        {fmtCost(buyCost)}
+                        {buyCostLabel}
                       </>
                     ) : (
-                      fmtCost(cost)
+                      buyCostLabel
                     )}
                   </button>
                 </div>
@@ -1400,11 +1600,11 @@ export default function Generators({
                     onClick={() => requestBuyMax(i)}
                     aria-label={t('gen.buyMaxAria', {
                       n: maxBuy.count > 0 ? maxBuy.count : 1,
-                      cost: fmtCost(maxBuy.count > 0 ? maxBuy.total : cost),
+                      cost: maxCostLabel,
                     })}
                   >
                     {t('gen.buyMaxBtn', {
-                      cost: fmtCost(maxBuy.count > 0 ? maxBuy.total : cost),
+                      cost: maxCostLabel,
                     })}
                   </button>
                 </div>
@@ -1523,7 +1723,10 @@ export default function Generators({
                       maxBuyOf(
                         confirmBuyMax,
                         game.gens[confirmBuyMax].bought,
-                        game.base
+                        game.base,
+                        confirmBuyMax > 0
+                          ? game.gens[confirmBuyMax - 1].amount
+                          : null
                       ).count
                     ),
                     rate: fmtRate(

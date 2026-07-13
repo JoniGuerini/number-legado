@@ -40,7 +40,7 @@ export const es: Dict = {
   'mode.manual': 'Manual',
   'mode.auto': 'Automático',
   'mode.hintAuto':
-    'El juego compra solo el generador de mayor nivel que puedas pagar: desbloquea el siguiente o apila el más alto que ya tengas.',
+    'El juego compra solo el generador de mayor nivel que permitan tus recursos: desbloquea el siguiente o apila el más alto que ya tengas.',
   'mode.hintManual': 'Tú haces todas las compras manualmente.',
 
   'gen.autoToggle': 'Automático: {state}',
@@ -55,6 +55,7 @@ export const es: Dict = {
   'gen.buyMaxBtn': '{cost}',
   'gen.buyMaxAria': 'Comprar {n} unidades por {cost}',
   'gen.buyMultAria': 'Comprar hasta {n} unidades por {cost}',
+  'gen.dualCost': '{base} + {previous} G{generator}',
   'shortcut.aria': 'Atajos del botón comprar',
   'shortcut.alt': 'Alt',
   'shortcut.cmd': '⌘',
@@ -89,6 +90,9 @@ export const es: Dict = {
   'frag.investTipNoChange': 'sin cambio',
   'frag.investTipBecomes': 'pasa a ser alcanzable',
   'frag.investTipCantAfford': 'faltan {need}',
+  'frag.investTipCantAffordPrevious': 'faltan {need} G{generator}',
+  'frag.investTipCantAffordBoth':
+    'faltan {base} base + {previous} G{generator}',
   'frag.investTipReady': 'Siguiente generador ya listo',
   'frag.investTipUnknown': 'Sin estimación de desbloqueo',
 

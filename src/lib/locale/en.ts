@@ -40,7 +40,7 @@ export const en: Dict = {
   'mode.manual': 'Manual',
   'mode.auto': 'Automatic',
   'mode.hintAuto':
-    'The game buys the highest-tier generator you can afford on its own: unlocking the next one or stacking the highest you already have.',
+    'The game buys the highest-tier generator your resources can afford: unlocking the next one or stacking the highest you already have.',
   'mode.hintManual': 'You make every purchase yourself.',
 
   'gen.autoToggle': 'Auto: {state}',
@@ -55,6 +55,7 @@ export const en: Dict = {
   'gen.buyMaxBtn': '{cost}',
   'gen.buyMaxAria': 'Buy {n} units for {cost}',
   'gen.buyMultAria': 'Buy up to {n} units for {cost}',
+  'gen.dualCost': '{base} + {previous} G{generator}',
   'shortcut.aria': 'Buy button shortcuts',
   'shortcut.alt': 'Alt',
   'shortcut.cmd': '⌘',
@@ -89,6 +90,9 @@ export const en: Dict = {
   'frag.investTipNoChange': 'no change',
   'frag.investTipBecomes': 'becomes reachable',
   'frag.investTipCantAfford': '{need} short',
+  'frag.investTipCantAffordPrevious': '{need} G{generator} short',
+  'frag.investTipCantAffordBoth':
+    '{base} base + {previous} G{generator} short',
   'frag.investTipReady': 'Next generator already ready',
   'frag.investTipUnknown': 'No unlock estimate',
 
