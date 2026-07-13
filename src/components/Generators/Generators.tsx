@@ -138,26 +138,17 @@ function loadGame(saveKey: string): Game {
   // vem do relógio de parede, então o jogo corre atrás sozinho ao carregar.
 }
 
-/** Encarecimento por compra: cada unidade comprada custa 10% a mais. */
-const COST_GROWTH = 1.1;
-
 /** Custo do gerador N (índice i): expoente triangular i·(i+1)/2 — o salto
     entre geradores cresce a cada degrau (×10, ×100, ×1000…): 1, 10, 1K, 1M,
-    10B… +10% a cada compra. */
-function costOf(i: number, bought: number): Decimal {
-  return Decimal.pow(10, (i * (i + 1)) / 2).mul(
-    Decimal.pow(COST_GROWTH, bought)
-  );
+    10B… O preço unitário não muda após as compras. */
+function costOf(i: number, _bought: number): Decimal {
+  return Decimal.pow(10, (i * (i + 1)) / 2);
 }
 
-/** Soma dos custos de `count` compras a partir de `bought` (série geométrica). */
-function totalCostOf(i: number, bought: number, count: number): Decimal {
+/** Soma de `count` unidades pelo preço fixo do tier. */
+function totalCostOf(i: number, _bought: number, count: number): Decimal {
   if (count <= 0) return new Decimal(0);
-  const first = costOf(i, bought);
-  // first · (r^n − 1) / (r − 1)
-  return first
-    .mul(Decimal.pow(COST_GROWTH, count).sub(1))
-    .div(COST_GROWTH - 1);
+  return costOf(i, 0).mul(count);
 }
 
 /** Máximo de unidades compráveis com o saldo atual + custo total gasto. */
@@ -166,19 +157,15 @@ function maxBuyOf(
   bought: number,
   balance: Decimal
 ): { count: number; total: Decimal } {
-  const first = costOf(i, bought);
-  if (balance.lt(first)) return { count: 0, total: new Decimal(0) };
+  const unit = costOf(i, bought);
+  if (balance.lt(unit)) return { count: 0, total: new Decimal(0) };
 
-  // r^n ≤ 1 + balance·(r−1)/first  →  n = floor(log_r(...))
-  const ratio = balance.mul(COST_GROWTH - 1).div(first).add(1);
-  let n = Math.floor(ratio.log10().div(Math.log10(COST_GROWTH)).toNumber());
-  if (!Number.isFinite(n) || n < 1) n = 1;
+  // `bought` é number: limita o lote ao intervalo inteiro seguro.
+  const capacity = Math.max(0, Number.MAX_SAFE_INTEGER - bought);
+  const raw = balance.div(unit).floor().toNumber();
+  const count = Math.min(Number.isFinite(raw) ? raw : capacity, capacity);
 
-  // Ajuste fino por arredondamento do log
-  while (n > 0 && totalCostOf(i, bought, n).gt(balance)) n--;
-  while (totalCostOf(i, bought, n + 1).lte(balance)) n++;
-
-  return { count: n, total: totalCostOf(i, bought, n) };
+  return { count, total: unit.mul(count) };
 }
 
 /** Compra em lote limitada pelo saldo: até `want` unidades. */
@@ -623,7 +610,7 @@ export default function Generators({
     });
   };
 
-  // Compra o máximo de unidades que o saldo atual cobre (série geométrica).
+  // Compra o máximo de unidades que o saldo atual cobre pelo preço fixo.
   const buyMax = (i: number) => {
     setConfirmBuyMax(null);
     setGame((g) => {
